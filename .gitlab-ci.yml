@@ -1,0 +1,29 @@
+variables:
+  UV_VERSION: "0.9"
+  PYTHON_VERSION: "3.13"
+  BASE_LAYER: bookworm
+  UV_LINK_MODE: copy
+
+stages:
+  - test
+
+
+unit_tests:
+  stage: test
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"
+  image: ghcr.io/astral-sh/uv:$UV_VERSION-python$PYTHON_VERSION-$BASE_LAYER
+  variables:
+    PRE_COMMIT_HOME: "$CI_PROJECT_DIR/.cache/pre-commit"
+    CACHET_TOKEN: "my-token"
+  cache:
+    key: $CI_COMMIT_REF_NAME
+    paths:
+      - $PRE_COMMIT_HOME
+      - .venv
+  before_script:
+    - uv sync
+  script:
+    - uv run pre-commit run --all-files
+    - uv run pytest

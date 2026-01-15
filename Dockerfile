@@ -1,0 +1,19 @@
+FROM ghcr.io/astral-sh/uv:0.9-python3.13-bookworm-slim
+
+SHELL ["/bin/bash", "-c"]
+
+WORKDIR /app
+
+ENV UV_NO_DEV=1
+
+COPY pyproject.toml pyproject.toml
+COPY uv.lock uv.lock
+
+RUN uv sync --locked --no-install-project
+
+COPY . /app
+RUN uv sync --locked
+
+ENTRYPOINT ["uv", "run", "src/cachet_adapter/api.py"]
+
+EXPOSE 8000

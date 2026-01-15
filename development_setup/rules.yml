@@ -1,0 +1,10 @@
+groups:
+- name: AllInstances
+  rules:
+  - alert: InstanceDown
+    expr: probe_success == 0
+    annotations:
+      title: 'Instance {{ $labels.instance }} down'
+      description: '{{ $labels.instance }} of job {{ $labels.job }} has been down.'
+    labels:
+      severity: 'critical'

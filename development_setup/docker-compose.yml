@@ -1,0 +1,37 @@
+services:
+
+  adapter:
+    build:
+      context: ..
+    volumes:
+      - ../.env:/app/.env
+      - ../cachet_adapter.sqlite:/app/cachet_adapter.sqlite
+    network_mode: "host"
+#    environment:
+#      HTTP_PROXY: socks5://localhost:8123
+#      HTTPS_PROXY: socks5://localhost:8123
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      - ./prometheus.yml:/prometheus.yml
+      - ./rules.yml:/rules.yml
+    command:
+      - --config.file=/prometheus.yml
+
+  blackbox:
+    image: quay.io/prometheus/blackbox-exporter
+    restart: unless-stopped
+    network_mode: "host"
+
+  alertmanager:
+    image: quay.io/prometheus/alertmanager
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      - ./alertmanager.yml:/alertmanager.yml
+    command:
+      - --config.file=/alertmanager.yml

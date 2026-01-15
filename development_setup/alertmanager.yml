@@ -1,0 +1,11 @@
+global:
+    resolve_timeout: 1s
+route:
+  receiver: webhook_receiver
+  group_wait: 1s
+  group_interval: 1s
+receivers:
+  - name: webhook_receiver
+    webhook_configs:
+      - url: http://localhost:8000/adapt
+        send_resolved: true

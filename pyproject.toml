@@ -1,0 +1,52 @@
+[project]
+name = "cachet-adapter"
+version = "0.1.0"
+description = "A basic adapter from Prometheus' Alertmanager to Cachet"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "email-validator>=2.3.0",
+    "fastapi>=0.121.3",
+    "pydantic>=2.12.4",
+    "pydantic-settings>=2.12.0",
+    "requests[socks]>=2.32.5",
+    "sqlmodel>=0.0.27",
+    "uvicorn>=0.38.0",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.4.0",
+    { include-group = "test" }
+]
+test = [
+    "pytest>=9.0.1",
+    "pytest-responses>=0.5.1",
+    "httpx>=0.28.1",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules
+select = [
+    # defaults
+    "F",
+    "E4", "E7", "E9",
+    # additional
+    "A", # be sure not to shadow built-in functions
+    "I", # isort to sort imports
+    "N", # check for use of PEP8 naming conventions
+    # docstring cleaning
+    "D201", "D207", "D208", "D209", "D210", "D214", "D215", "D300", "D403",
+    # auto-remove unused 'noqa' comments
+    "RUF100", "RUF101",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.5,<0.10.0"]
+build-backend = "uv_build"
