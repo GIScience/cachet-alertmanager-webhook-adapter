@@ -30,7 +30,7 @@ async def configure_dependencies(the_app: FastAPI):
     log.debug('Configuring API')
     settings = AdapterSettings()
 
-    the_app.state.cachet_api = CachetApi(base_url=settings.cachet_api_url, token=settings.cachet_api_token)
+    the_app.state.cachet_api = CachetApi(base_url=settings.cachet_api_url, token=settings.cachet_token)
 
     sqlite_url = f'sqlite:///{settings.sqlite_filename}'
 
