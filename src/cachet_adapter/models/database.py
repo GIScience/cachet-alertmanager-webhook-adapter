@@ -2,7 +2,10 @@ from enum import StrEnum
 
 from sqlmodel import Field, SQLModel
 
-DEFAULT_GROUP = 'general'
+# the current implementation does not allow ungrouped components (i.e. None-group9 because primary keys in SQL
+# databases need to be Non-NULL
+# the current work-around is to use an empty string placeholder until the implementation is made more robust
+NONE_GROUP_STR = ''
 
 
 class ComponentRelationship(StrEnum):
@@ -11,9 +14,9 @@ class ComponentRelationship(StrEnum):
 
 
 class ComponentGraph(SQLModel, table=True):
-    from_group: str = Field(default=DEFAULT_GROUP, primary_key=True, index=True)
+    from_group: str = Field(default=NONE_GROUP_STR, primary_key=True, index=True)
     from_component: str = Field(primary_key=True, index=True)
-    to_group: str = Field(default=DEFAULT_GROUP, primary_key=True, index=True)
+    to_group: str = Field(default=NONE_GROUP_STR, primary_key=True, index=True)
     to_component: str = Field(primary_key=True, index=True)
     relationship: ComponentRelationship
 

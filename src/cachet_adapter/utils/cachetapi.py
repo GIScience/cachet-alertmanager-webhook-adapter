@@ -6,6 +6,7 @@ from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
 from cachet_adapter.models.cachet import CachetComponentResponse, CachetIncidentResponse
+from cachet_adapter.models.database import NONE_GROUP_STR
 
 
 class CachetApi:
@@ -53,8 +54,11 @@ class CachetApi:
         for component in cachet_response.data:
             if component.relationships.group.data:
                 cachet_group_name = group_lookup.get(component.relationships.group.data.id)
-                if component_group == cachet_group_name and component_name == component.attributes.name:
-                    return component.id
+            else:
+                cachet_group_name = NONE_GROUP_STR
+
+            if component_group == cachet_group_name and component_name == component.attributes.name:
+                return component.id
         return None
 
     def create_incident(self, incident_json: dict[str, Any]) -> int:

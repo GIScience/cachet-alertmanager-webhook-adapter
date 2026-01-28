@@ -8,23 +8,23 @@ def test_get_mapping_all(mocked_client, load_component_triangle):
     assert response.status_code == 200
     assert response.json() == [
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'b',
             'relationship': 'requires',
         },
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'b',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'c',
             'relationship': 'optional',
         },
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'c',
             'relationship': 'requires',
         },
@@ -49,7 +49,7 @@ def test_get_mapping_group(mocked_client, database, load_component_chain):
         {
             'from_group': 'special',
             'from_component': 'd',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'c',
             'relationship': 'requires',
         }
@@ -57,20 +57,20 @@ def test_get_mapping_group(mocked_client, database, load_component_chain):
 
 
 def test_get_mapping_one(mocked_client, load_component_triangle):
-    response = mocked_client.get('/component-mapping', params={'group': 'general', 'component': 'a'})
+    response = mocked_client.get('/component-mapping', params={'component': 'a'})
     assert response.status_code == 200
     assert response.json() == [
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'b',
             'relationship': 'requires',
         },
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'c',
             'relationship': 'requires',
         },
@@ -80,21 +80,21 @@ def test_get_mapping_one(mocked_client, load_component_triangle):
 def test_get_recursive_dependencies(mocked_client, load_component_chain):
     response = mocked_client.get(
         '/component-mapping',
-        params={'group': 'general', 'component': 'a', 'recursive': True},
+        params={'component': 'a', 'recursive': True},
     )
     assert response.status_code == 200
     assert response.json() == [
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'b',
             'relationship': 'requires',
         },
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'c',
             'relationship': 'optional',
             'transitive': True,
@@ -117,28 +117,28 @@ def test_get_recursive_dependencies_fails_for_missing_info(mocked_client, load_c
 def test_get_recursive_dependencies_with_direct_route(mocked_client, load_component_triangle):
     response = mocked_client.get(
         '/component-mapping',
-        params={'group': 'general', 'component': 'a', 'recursive': True},
+        params={'component': 'a', 'recursive': True},
     )
     assert response.status_code == 200
     assert response.json() == [
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'b',
             'relationship': 'requires',
         },
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'c',
             'relationship': 'requires',
         },
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'c',
             'relationship': 'optional',
             'transitive': True,
@@ -158,29 +158,29 @@ def test_get_recursive_dependencies_with_required_after_optional(mocked_client, 
 
     response = mocked_client.get(
         '/component-mapping',
-        params={'group': 'general', 'component': 'a', 'recursive': True},
+        params={'component': 'a', 'recursive': True},
     )
     assert response.status_code == 200
     assert response.json() == [
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'b',
             'relationship': 'requires',
         },
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'c',
             'relationship': 'optional',
             'transitive': True,
         },
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'd',
             'relationship': 'optional',
             'transitive': True,
@@ -201,7 +201,6 @@ def test_get_recursive_dependencies_with_required_after_optional_upward(mocked_c
     response = mocked_client.get(
         '/component-mapping',
         params={
-            'group': 'general',
             'component': 'd',
             'recursive': True,
             'upward': True,
@@ -210,24 +209,24 @@ def test_get_recursive_dependencies_with_required_after_optional_upward(mocked_c
     assert response.status_code == 200
     assert response.json() == [
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'c',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'd',
             'relationship': 'requires',
         },
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'b',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'd',
             'relationship': 'optional',
             'transitive': True,
         },
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'd',
             'relationship': 'optional',
             'transitive': True,
@@ -243,9 +242,9 @@ def test_get_reverse_dependencies(mocked_client, load_component_chain):
     assert response.status_code == 200
     assert response.json() == [
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'b',
             'relationship': 'requires',
         },
@@ -256,7 +255,6 @@ def test_get_reverse_dependencies_recursive(mocked_client, load_component_chain)
     response = mocked_client.get(
         '/component-mapping',
         params={
-            'group': 'general',
             'component': 'c',
             'upward': True,
             'recursive': True,
@@ -265,16 +263,16 @@ def test_get_reverse_dependencies_recursive(mocked_client, load_component_chain)
     assert response.status_code == 200
     assert response.json() == [
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'b',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'c',
             'relationship': 'optional',
         },
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'c',
             'relationship': 'optional',
             'transitive': True,
@@ -295,9 +293,9 @@ def test_put_mapping_new(mocked_client):
     assert response.status_code == 201
     expected_response = [
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'd',
             'relationship': 'requires',
         },
@@ -349,9 +347,9 @@ def test_put_mapping_changed(mocked_client, load_component_chain):
     assert response.status_code == 201
     assert response.json() == [
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'b',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'c',
             'relationship': 'requires',
         }
@@ -362,18 +360,18 @@ def test_delete_existing_mapping(mocked_client, load_component_triangle):
     response = mocked_client.delete(
         '/component-mapping',
         params={
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'b',
         },
     )
     assert response.status_code == 200
     assert response.json() == [
         {
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'a',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'c',
             'relationship': 'requires',
         }
@@ -384,9 +382,9 @@ def test_delete_inexistent_mapping(mocked_client):
     response = mocked_client.delete(
         '/component-mapping',
         params={
-            'from_group': 'general',
+            'from_group': '',
             'from_component': 'e',
-            'to_group': 'general',
+            'to_group': '',
             'to_component': 'f',
         },
     )

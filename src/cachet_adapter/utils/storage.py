@@ -73,7 +73,7 @@ def subset_graph(
     linked_components = db_session.exec(stmt).fetchall()
     result.extend(linked_components)
 
-    if group and component and recursive:
+    if group is not None and component and recursive:
         for linked_component in linked_components:
             if upward:
                 query_group = linked_component.from_group

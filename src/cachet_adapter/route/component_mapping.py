@@ -6,7 +6,7 @@ from starlette.requests import Request
 
 from cachet_adapter.models.api import ComponentGraphResponse
 from cachet_adapter.models.database import (
-    DEFAULT_GROUP,
+    NONE_GROUP_STR,
     ComponentGraph,
 )
 from cachet_adapter.utils.storage import delete_mapping, subset_graph, upsert_mapping
@@ -23,7 +23,7 @@ def get_component_mapping(
     upward: bool = False,
 ) -> Sequence[ComponentGraphResponse | ComponentGraph]:
     if component:
-        group = group or DEFAULT_GROUP
+        group = group or NONE_GROUP_STR
 
     with Session(request.app.state.db_engine) as db_session:
         try:

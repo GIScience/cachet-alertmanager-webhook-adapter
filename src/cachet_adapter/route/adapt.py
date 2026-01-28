@@ -16,7 +16,7 @@ from cachet_adapter.models.cachet import (
     IncidentStatus,
 )
 from cachet_adapter.models.database import (
-    DEFAULT_GROUP,
+    NONE_GROUP_STR,
     ComponentRelationship,
 )
 from cachet_adapter.utils.cachetapi import CachetApi
@@ -43,7 +43,7 @@ async def adapt(alertmanager: AlertmanagerWebhook, request: Request) -> AdaptRes
 
 
 def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> int:
-    alert_component_group = alert.labels.org or DEFAULT_GROUP
+    alert_component_group = alert.labels.org or NONE_GROUP_STR
     alert_component_status = extract_alert_component_status(severity=alert.labels.severity)
     alert_component_name = alert.labels.cachet_component or alert.labels.job
     alert_component_id = cachet_api.get_component_id(

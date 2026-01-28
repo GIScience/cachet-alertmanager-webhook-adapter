@@ -9,8 +9,7 @@ def test_adapt_creates_incident(mocked_client, responses):
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
         },
     )
 
@@ -64,11 +63,8 @@ def test_adapt_creates_incident_matching_component_name(mocked_client, responses
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
             'data': [
-                {'id': '5', 'attributes': {'name': 'aa'}, 'relationships': {'group': {'data': {'id': '1'}}}},
-                {'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}},
-            ],
-            'included': [
-                {'id': '1', 'attributes': {'name': 'general'}},
+                {'id': '5', 'attributes': {'name': 'aa'}, 'relationships': {'group': {'data': None}}},
+                {'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}},
             ],
         },
     )
@@ -170,10 +166,9 @@ def test_adapt_custom_tag_overwrites_job_name(mocked_client, responses):
                 {
                     'id': '2',
                     'attributes': {'name': 'custom component name'},
-                    'relationships': {'group': {'data': {'id': '1'}}},
+                    'relationships': {'group': {'data': None}},
                 }
             ],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
         },
     )
 
@@ -221,16 +216,14 @@ def test_adapt_links_incidents_to_dependent_components(mocked_client, responses,
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
         },
     )
     responses.get(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
         json={
-            'data': [{'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': None}}}],
         },
     )
 
@@ -285,16 +278,21 @@ def test_adapt_links_incidents_to_dependent_components_respects_group(database, 
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
         },
     )
     responses.get(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'd', 'include': 'group'})],
         json={
-            'data': [{'id': '5', 'attributes': {'name': 'd'}, 'relationships': {'group': {'data': {'id': '2'}}}}],
-            'included': [{'id': '2', 'attributes': {'name': 'special'}}],
+            'data': [
+                {'id': '5', 'attributes': {'name': 'd'}, 'relationships': {'group': {'data': {'id': '2'}}}},
+                {'id': '6', 'attributes': {'name': 'd'}, 'relationships': {'group': {'data': {'id': '1'}}}},
+            ],
+            'included': [
+                {'id': '1', 'attributes': {'name': 'general'}},
+                {'id': '2', 'attributes': {'name': 'special'}},
+            ],
         },
     )
 
@@ -339,24 +337,21 @@ def test_adapt_dependent_component_respect_relationship(mocked_client, responses
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
         },
     )
     responses.get(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
         json={
-            'data': [{'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': None}}}],
         },
     )
     responses.get(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'c', 'include': 'group'})],
         json={
-            'data': [{'id': '3', 'attributes': {'name': 'c'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '3', 'attributes': {'name': 'c'}, 'relationships': {'group': {'data': None}}}],
         },
     )
 
@@ -407,8 +402,7 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
         },
     )
     responses.get(
@@ -465,8 +459,7 @@ def test_adapt_links_incidents_to_dependent_components_dependent_no_compnent(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
         json={
-            'data': [{'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': None}}}],
         },
     )
 
@@ -513,8 +506,7 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component_in_grou
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
         },
     )
     responses.get(
@@ -549,52 +541,6 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component_in_grou
                 'annotations': {
                     'description': 'Component b is down.',
                     'title': 'Component b down',
-                },
-                'startsAt': '2025-11-20T15:54:41.898000Z',
-                'fingerprint': 'fingerprint',
-            }
-        ]
-    }
-
-    response = mocked_client.post('/adapt', json=alertmanager_request)
-
-    assert response.status_code == 200
-    assert response.json() == {'incident_ids': [30]}
-
-
-def test_adapt_accepts_non_grouped_component(mocked_client, responses):
-    responses.get(
-        'http://test-cachet/api/components',
-        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
-        json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
-            'included': [],
-        },
-    )
-
-    cachet_request = {
-        'name': 'Component a down',
-        'status': 0,
-        'message': 'Component a is down.',
-        'visible': False,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
-        'components': [],
-    }
-    cachet_response = {'data': {'id': '30'}}
-    responses.post(
-        'http://test-cachet/api/incidents',
-        match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
-        json=cachet_response,
-    )
-
-    alertmanager_request = {
-        'alerts': [
-            {
-                'status': 'firing',
-                'labels': {'job': 'a'},
-                'annotations': {
-                    'description': 'Component a is down.',
-                    'title': 'Component a down',
                 },
                 'startsAt': '2025-11-20T15:54:41.898000Z',
                 'fingerprint': 'fingerprint',
@@ -656,8 +602,7 @@ def test_adapt_respects_severity(mocked_client, responses):
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
         },
     )
 
@@ -702,16 +647,14 @@ def test_adapt_respects_severity_for_dependencies(mocked_client, responses, load
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
         },
     )
     responses.get(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
         json={
-            'data': [{'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': None}}}],
         },
     )
 
@@ -756,8 +699,7 @@ def test_adapt_updates_existing_incident_on_same_fingerprint(mocked_client, resp
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
         },
     )
 
@@ -818,8 +760,7 @@ def test_adapt_marks_incident_fixed_on_resolved_alert(mocked_client, responses):
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
         },
     )
 
@@ -880,16 +821,14 @@ def test_adapt_marks_required_dependents_as_major_outage(mocked_client, load_com
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
         },
     )
     responses.get(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
         json={
-            'data': [{'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': None}}}],
         },
     )
 
@@ -931,24 +870,21 @@ def test_adapt_marks_optional_dependents_as_partial_outage(mocked_client, load_c
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
         },
     )
     responses.get(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
         json={
-            'data': [{'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': None}}}],
         },
     )
     responses.get(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'c', 'include': 'group'})],
         json={
-            'data': [{'id': '3', 'attributes': {'name': 'c'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
-            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+            'data': [{'id': '3', 'attributes': {'name': 'c'}, 'relationships': {'group': {'data': None}}}],
         },
     )
 
