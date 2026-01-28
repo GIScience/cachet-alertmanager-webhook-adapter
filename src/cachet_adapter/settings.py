@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class AdapterSettings(BaseSettings):
     log_level: str = 'INFO'
 
-    port: int = 8000
+    port: int = 8001
     root_path: str = '/'
 
     cachet_api_url: HttpUrl
