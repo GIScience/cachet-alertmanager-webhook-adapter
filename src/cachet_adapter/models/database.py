@@ -2,7 +2,7 @@ from enum import StrEnum
 
 from sqlmodel import Field, SQLModel
 
-# the current implementation does not allow ungrouped components (i.e. None-group9 because primary keys in SQL
+# the current implementation does not allow ungrouped components (i.e. None-group) because primary keys in SQL
 # databases need to be Non-NULL
 # the current work-around is to use an empty string placeholder until the implementation is made more robust
 NONE_GROUP_STR = ''

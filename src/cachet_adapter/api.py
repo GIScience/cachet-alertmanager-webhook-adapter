@@ -12,19 +12,6 @@ from cachet_adapter.utils.cachetapi import CachetApi
 log = logging.getLogger(__name__)
 
 
-# TODO:
-
-# inbox
-# - get it deployed
-# - try it out some more!
-# - present tool at JF
-
-# later optimisaiton
-# - clean local cache db if incident is resolved (or is there any benefit in keeping the entries which makes us accept the degradation of performance?)
-# - check if NetworkX would actually simplify the component mapping
-# - mount headers to requests session
-
-
 @asynccontextmanager
 async def configure_dependencies(the_app: FastAPI):
     log.debug('Configuring API')
