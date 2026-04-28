@@ -1,17 +1,5 @@
 services:
 
-  adapter:
-    build:
-      context: ..
-    volumes:
-      - ../.env:/app/.env
-      - ../cachet_adapter.sqlite:/app/cachet_adapter.sqlite
-    network_mode: "host"
-#    environment:
-#      HTTP_PROXY: socks5://localhost:8123
-#      HTTPS_PROXY: socks5://localhost:8123
-    restart: unless-stopped
-
   prometheus:
     image: prom/prometheus
     restart: unless-stopped

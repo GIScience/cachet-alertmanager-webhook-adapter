@@ -19,7 +19,7 @@ async def configure_dependencies(the_app: FastAPI):
 
     the_app.state.cachet_api = CachetApi(base_url=settings.cachet_api_url, token=settings.cachet_token)
 
-    sqlite_url = f'sqlite:///{settings.sqlite_filename}'
+    sqlite_url = f'sqlite:///{settings.sqlite_file}'
 
     connect_args = {'check_same_thread': False}
     engine = create_engine(sqlite_url, connect_args=connect_args)

@@ -7,5 +7,5 @@ route:
 receivers:
   - name: webhook_receiver
     webhook_configs:
-      - url: http://localhost:8000/adapt
+      - url: http://localhost:8002/adapt
         send_resolved: true

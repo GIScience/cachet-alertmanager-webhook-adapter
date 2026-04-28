@@ -21,7 +21,7 @@ cp .env_template .env
 uv run src/cachet_adapter/api.py
 ```
 
-Then go to http://127.0.0.1:8001
+Then go to http://127.0.0.1:8002
 
 ## Testing
 

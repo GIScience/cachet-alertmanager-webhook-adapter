@@ -1,0 +1,10 @@
+services:
+  adapter:
+    build:
+      context: .
+    volumes:
+      - ./.env:/app/.env
+      - ./data:/app/data
+    ports:
+      - "8002:8002"
+    restart: unless-stopped

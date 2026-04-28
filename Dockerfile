@@ -16,4 +16,4 @@ RUN uv sync --locked
 
 ENTRYPOINT ["uv", "run", "src/cachet_adapter/api.py"]
 
-EXPOSE 8000
+EXPOSE 8002

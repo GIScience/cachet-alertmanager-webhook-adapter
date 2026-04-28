@@ -4,6 +4,8 @@ A webhook adapter that translates [Prometheus Alertmanager](https://prometheus.i
 alerts into [Cachet](https://cachethq.io/) status page incidents, and updates components.
 It maintains a component dependency graph to automatically propagate status changes to dependent components.
 
+[[_TOC_]]
+
 ## Similar Projects
 
 There are existing tools that basically do the same thing but are >5y unmaintained:
@@ -13,16 +15,32 @@ There are existing tools that basically do the same thing but are >5y unmaintain
 
 You can also follow the discussion on the topic at https://github.com/cachethq/core/issues/310
 
-## Configuration
+## Installation
 
-The adapter requires the following environment variables:
+If you do not need a development setup (see [Contributing](#contributing)) the easiest way to run the adapter is the
+dockerised version.
+Run `docker compose build` to build the docker image locally.
 
-| Variable          | Required | Default                 | Description                                                        |
-|-------------------|----------|-------------------------|--------------------------------------------------------------------|
-| `CACHET_API_URL`  | Yes      | -                       | URL to your Cachet API (e.g., `https://status.example.com/api/v1`) |
-| `CACHET_TOKEN`    | Yes      | -                       | Bearer token for Cachet authentication                             |
-| `PORT`            | No       | `8001`                  | Server port                                                        |
-| `SQLITE_FILENAME` | No       | `cachet_adapter.sqlite` | SQLite database file for storing mappings                          |
+### Configuration
+
+Copy the `.env_template` to `.env` by running `cp .env_template .env`.
+Then fill in the required parameters.
+
+The adapter has the following environment variables:
+
+| Variable         | Required | Default                 | Description                                                        |
+|------------------|----------|-------------------------|--------------------------------------------------------------------|
+| `CACHET_API_URL` | Yes      | -                       | URL to your Cachet API (e.g., `https://status.example.com/api/v1`) |
+| `CACHET_TOKEN`   | Yes      | -                       | Bearer token for Cachet authentication                             |
+| `PORT`           | No       | `8002`                  | Server port                                                        |
+| `SQLITE_FILE`    | No       | `cachet_adapter.sqlite` | Path to the SQLite database file for storing mappings              |
+
+## Run
+
+Now start the adapter using `docker compose up`.
+Use the `-d` flag to start it in the background.
+
+The adapter will be available at http://localhost:8002/docs.
 
 ---
 
@@ -186,19 +204,19 @@ GET /component-mapping
 
 ```bash
 # Get all dependency mappings
-curl "http://localhost:8001/component-mapping"
+curl "http://localhost:8002/component-mapping"
 
 # Get direct dependencies of web-app
-curl "http://localhost:8001/component-mapping?group=general&component=web-app"
+curl "http://localhost:8002/component-mapping?group=general&component=web-app"
 
 # Get all dependencies (including transitive) of web-app
-curl "http://localhost:8001/component-mapping?group=general&component=web-app&recursive=true"
+curl "http://localhost:8002/component-mapping?group=general&component=web-app&recursive=true"
 
 # Find all components that depend on database
-curl "http://localhost:8001/component-mapping?component=database&upward=true"
+curl "http://localhost:8002/component-mapping?component=database&upward=true"
 
 # Find all components that depend on database (including transitive dependents)
-curl "http://localhost:8001/component-mapping?group=general&component=database&recursive=true&upward=true"
+curl "http://localhost:8002/component-mapping?group=general&component=database&recursive=true&upward=true"
 ```
 
 **Response with `recursive=true`:**
@@ -245,7 +263,7 @@ Configure Alertmanager to send webhooks to the adapter:
 receivers:
   - name: 'cachet'
     webhook_configs:
-      - url: 'http://cachet-adapter:8000/adapt'
+      - url: 'http://127.0.0.1:8002/adapt'
         send_resolved: true
 
 route:
