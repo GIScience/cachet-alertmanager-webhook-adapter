@@ -42,6 +42,8 @@ Use the `-d` flag to start it in the background.
 
 The adapter will be available at http://localhost:8002/docs.
 
+We suggest you use a `docker-compose.override.yml` file to adapt the compose file to your needs.
+
 ---
 
 ## API Reference
