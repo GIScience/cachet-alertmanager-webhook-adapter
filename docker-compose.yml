@@ -8,3 +8,9 @@ services:
     ports:
       - "8002:8002"
     restart: unless-stopped
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
