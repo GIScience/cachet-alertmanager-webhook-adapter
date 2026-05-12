@@ -5,7 +5,16 @@ from pydantic import HttpUrl
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
-from cachet_adapter.models.cachet import CachetComponentResponse, CachetIncidentResponse
+from cachet_adapter.models.cachet import (
+    BaseComponent,
+    CachetComponentCreateResponse,
+    CachetComponentQueryResponse,
+    CachetGroup,
+    CachetGroupAttributes,
+    CachetGroupCreateResponse,
+    CachetGroupQueryResponse,
+    CachetIncidentResponse,
+)
 from cachet_adapter.models.database import NONE_GROUP_STR
 
 
@@ -36,12 +45,28 @@ class CachetApi:
         self.session.mount('http://', HTTPAdapter(max_retries=retries))
         self.session.mount('https://', HTTPAdapter(max_retries=retries))
 
-    def get_potential_components(self, component_name: str) -> CachetComponentResponse:
+    def list_groups(self) -> list[CachetGroup]:
+        response = self.session.get(f'{self.base_url}/component-groups')
+        response.raise_for_status()
+        response_json = response.json()
+        cachet_response = CachetGroupQueryResponse.model_validate(response_json)
+        return cachet_response.data
+
+    def create_group(self, group: CachetGroupAttributes) -> int:
+        group_data = group.model_dump(mode='json')
+        response = self.session.post(f'{self.base_url}/component-groups', json=group_data)
+        response.raise_for_status()
+        response_json = response.json()
+        response_group = CachetGroupCreateResponse.model_validate(response_json)
+        group_id = response_group.data.id
+        return group_id
+
+    def get_potential_components(self, component_name: str) -> CachetComponentQueryResponse:
         querystring = {'filter[name]': component_name, 'include': 'group'}
         response = self.session.get(f'{self.base_url}/components', params=querystring)
         response.raise_for_status()
         response_json = response.json()
-        cachet_response = CachetComponentResponse.model_validate(response_json)
+        cachet_response = CachetComponentQueryResponse.model_validate(response_json)
         return cachet_response
 
     def get_component_id(self, component_group: str, component_name: str) -> Optional[int]:
@@ -60,6 +85,16 @@ class CachetApi:
             if component_group == cachet_group_name and component_name == component.attributes.name:
                 return component.id
         return None
+
+    def create_component(self, component: BaseComponent, group_id: int) -> int:
+        component_data = component.model_dump(mode='json')
+        component_data = component_data | {'component_group_id': group_id}
+        response = self.session.post(f'{self.base_url}/components', json=component_data)
+        response.raise_for_status()
+        response_json = response.json()
+        response_component = CachetComponentCreateResponse.model_validate(response_json)
+        component_id = response_component.data.id
+        return component_id
 
     def create_incident(self, incident_json: dict[str, Any]) -> int:
         response = self.session.post(f'{self.base_url}/incidents', json=incident_json)

@@ -44,10 +44,13 @@ app = FastAPI(
     docs_url='/docs',
     redoc_url='/redoc',
 )
+
 app.include_router(health.router)
 app.include_router(adapt.router)
 app.include_router(component_mapping.router)
-if __name__ == '__main__':
+
+
+def main():
     settings = AdapterSettings()
     logging.basicConfig(level=settings.log_level.upper())
     uvicorn.run(
@@ -57,3 +60,7 @@ if __name__ == '__main__':
         root_path=settings.root_path,
         log_level=settings.log_level.lower(),
     )
+
+
+if __name__ == '__main__':
+    main()

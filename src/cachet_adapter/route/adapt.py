@@ -10,9 +10,9 @@ from cachet_adapter.models.alertmanager import (
 )
 from cachet_adapter.models.api import AdaptResponse
 from cachet_adapter.models.cachet import (
-    Component,
     ComponentStatus,
     Incident,
+    IncidentComponent,
     IncidentStatus,
 )
 from cachet_adapter.models.database import (
@@ -55,7 +55,7 @@ def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> i
 
     linked_components = set()
     if alert_component_id:
-        linked_components.add(Component(id=alert_component_id, status=alert_component_status))
+        linked_components.add(IncidentComponent(id=alert_component_id, status=alert_component_status))
 
     dependent_components = unique_dependent_components(
         group=alert_component_group, component=alert_component_name, db_session=db_session
@@ -71,7 +71,7 @@ def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> i
                     alert_component_status=alert_component_status,
                     dependent_component_relationship=dependent_component_relationship,
                 )
-                component = Component(id=dependent_component_id, status=dependent_component_status)
+                component = IncidentComponent(id=dependent_component_id, status=dependent_component_status)
                 linked_components.add(component)
 
     incident = Incident(

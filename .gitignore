@@ -2,6 +2,7 @@
 .venv
 .env
 
+components.json
 cachet_adapter.sqlite
 docker-compose.override.yml
 

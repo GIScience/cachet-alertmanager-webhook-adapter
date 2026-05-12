@@ -18,7 +18,7 @@ cp .env_template .env
 # Edit .env with your Cachet API URL and token
 
 # Run the server
-uv run src/cachet_adapter/api.py
+uv run start-adapter
 ```
 
 Then go to http://127.0.0.1:8002

@@ -23,8 +23,13 @@ def database() -> Engine:
 
 
 @pytest.fixture
-def mocked_client(database) -> TestClient:
-    app.state.cachet_api = CachetApi(base_url=HttpUrl('http://test-cachet/api'), token='my-token')
+def mocked_api() -> CachetApi:
+    return CachetApi(base_url=HttpUrl('http://test-cachet/api'), token='my-token')
+
+
+@pytest.fixture
+def mocked_client(database, mocked_api) -> TestClient:
+    app.state.cachet_api = mocked_api
 
     app.state.db_engine = database
 

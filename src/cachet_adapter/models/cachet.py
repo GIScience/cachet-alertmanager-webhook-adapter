@@ -1,8 +1,8 @@
 from datetime import datetime
 from enum import IntEnum
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class ComponentStatus(IntEnum):
@@ -17,7 +17,18 @@ class IncidentStatus(IntEnum):
     FIXED = 4
 
 
-class Component(BaseModel, frozen=True):
+class BaseComponent(BaseModel):
+    name: str
+    description: Optional[str] = '-'
+    link: Optional[HttpUrl | Literal['-']] = '-'
+    status: ComponentStatus = ComponentStatus.OPERATIONAL
+
+
+class Component(BaseComponent):
+    id: Annotated[int, Field(ge=1)]
+
+
+class IncidentComponent(BaseModel, frozen=True):
     id: Annotated[int, Field(ge=1)]
     status: ComponentStatus
 
@@ -28,7 +39,7 @@ class Incident(BaseModel):
     message: Optional[str] = None
     visible: bool = False
     occurred_at: Optional[datetime] = None
-    components: Optional[list[Component]] = None
+    components: Optional[list[IncidentComponent]] = None
 
 
 class CachetIncidentResponseData(BaseModel):
@@ -47,8 +58,16 @@ class CachetRelationshipGroup(BaseModel):
     data: Optional[CachetRelationshipGroupData] = None
 
 
-class CachetRelationships(BaseModel):
+class CachetRelationshipComponent(BaseModel):
+    data: list[CachetRelationshipGroupData]
+
+
+class CachetComponentRelationships(BaseModel):
     group: CachetRelationshipGroup
+
+
+class CachetGroupRelationships(BaseModel):
+    components: CachetRelationshipComponent
 
 
 class CachetComponentAttributes(BaseModel):
@@ -58,18 +77,32 @@ class CachetComponentAttributes(BaseModel):
 class CachetComponentResponseData(BaseModel):
     id: int
     attributes: CachetComponentAttributes
-    relationships: CachetRelationships
+    relationships: CachetComponentRelationships
 
 
 class CachetGroupAttributes(BaseModel):
     name: str
+    visible: bool = True
 
 
 class CachetGroup(BaseModel):
     id: int
     attributes: CachetGroupAttributes
+    relationships: Optional[CachetGroupRelationships] = None
 
 
-class CachetComponentResponse(BaseModel):
+class CachetComponentQueryResponse(BaseModel):
     data: list[CachetComponentResponseData]
     included: list[CachetGroup] = []
+
+
+class CachetGroupQueryResponse(BaseModel):
+    data: list[CachetGroup]
+
+
+class CachetComponentCreateResponse(BaseModel):
+    data: Component
+
+
+class CachetGroupCreateResponse(BaseModel):
+    data: CachetGroup

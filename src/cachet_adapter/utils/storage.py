@@ -91,14 +91,14 @@ def subset_graph(
             )
             for recursive_component in recursive_components:
                 if upward:
-                    rectursive_component_from_group = recursive_component.from_group
+                    recursive_component_from_group = recursive_component.from_group
                     recursive_component_from_component = recursive_component.from_component
-                    recutrsive_component_to_group = group
+                    recursive_component_to_group = group
                     recursive_component_to_component = component
                 else:
-                    rectursive_component_from_group = group
+                    recursive_component_from_group = group
                     recursive_component_from_component = component
-                    recutrsive_component_to_group = recursive_component.to_group
+                    recursive_component_to_group = recursive_component.to_group
                     recursive_component_to_component = recursive_component.to_component
 
                 if linked_component.relationship == ComponentRelationship.REQUIRES:
@@ -108,9 +108,9 @@ def subset_graph(
 
                 result.append(
                     ComponentGraphResponse(
-                        from_group=rectursive_component_from_group,
+                        from_group=recursive_component_from_group,
                         from_component=recursive_component_from_component,
-                        to_group=recutrsive_component_to_group,
+                        to_group=recursive_component_to_group,
                         to_component=recursive_component_to_component,
                         relationship=recursive_component_relationship,
                         transitive=True,

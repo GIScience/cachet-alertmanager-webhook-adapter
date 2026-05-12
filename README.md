@@ -35,6 +35,31 @@ The adapter has the following environment variables:
 | `PORT`           | No       | `8002`                  | Server port                                                        |
 | `SQLITE_FILE`    | No       | `cachet_adapter.sqlite` | Path to the SQLite database file for storing mappings              |
 
+#### Setup
+
+Running the adapter on a bare setup works but is not very useful.
+To quickly load your custom data, we provide a helper script: `load-components`.
+
+It reads in a JSON file and creates the specified components in Cachet.
+
+```shell
+uv run load-components --component-file /path/to/file.json
+```
+
+The component file must have the format
+
+```json
+{
+  "<group name>": [
+    {
+      "name": "<component name>",
+      "description": "<optional description>",
+      "link": "<optional link>"
+    }
+  ]
+}
+```
+
 ## Run
 
 Now start the adapter using `docker compose up`.

@@ -14,6 +14,7 @@ RUN uv sync --locked --no-install-project
 COPY . /app
 RUN uv sync --locked
 
-ENTRYPOINT ["uv", "run", "src/cachet_adapter/api.py"]
+ENTRYPOINT ["uv", "run"]
+CMD ["start-adapter"]
 
 EXPOSE 8002
