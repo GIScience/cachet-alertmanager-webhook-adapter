@@ -2,7 +2,8 @@
 .venv
 .env
 
-components.json
+data/components.json
+data/dependency_graph.csv
 cachet_adapter.sqlite
 docker-compose.override.yml
 

@@ -3,29 +3,36 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
-from cachet_adapter.models.api import ComponentGraphResponse
+from cachet_adapter.models.api import ComponentGraphResponse, FlatComponentGraph, NestedComponentGraph
 from cachet_adapter.models.database import ComponentGraph, ComponentRelationship, IncidentResolver
 
 
-def upsert_mapping(db_session: Session, mapping: ComponentGraph) -> list[ComponentGraph | ComponentGraphResponse]:
-    chain_down = subset_graph(
-        group=mapping.to_group,
-        component=mapping.to_component,
-        db_session=db_session,
-        recursive=True,
-    )
-    for link in chain_down:
-        if link.to_component == mapping.from_component:
-            raise HTTPException(
-                status_code=400,
-                detail=f'The requested mapping would introduce a circular dependency from {link.to_component} to {mapping.from_component}',
-            )
+def upsert_mapping(db_session: Session, mappings: list[ComponentGraph]) -> NestedComponentGraph:
+    result = dict()
+    for mapping in mappings:
+        chain_down = subset_graph(
+            group=mapping.to_group,
+            component=mapping.to_component,
+            db_session=db_session,
+            recursive=True,
+        )
+        for link in chain_down:
+            if link.to_component == mapping.from_component:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f'The requested mapping would introduce a circular dependency from {link.to_component} to {mapping.from_component}',
+                )
 
-    db_session.merge(mapping)
-    db_session.commit()
+        db_session.merge(mapping)
+        db_session.commit()
 
-    linked_components = subset_graph(group=mapping.from_group, component=mapping.from_component, db_session=db_session)
-    return linked_components
+        linked_components = subset_graph(
+            group=mapping.from_group, component=mapping.from_component, db_session=db_session
+        )
+        group_graph = result.get(mapping.from_group, dict())
+        group_graph[mapping.from_component] = linked_components
+        result[mapping.from_group] = group_graph
+    return result
 
 
 def delete_mapping(
@@ -34,7 +41,7 @@ def delete_mapping(
     from_component: str,
     to_group: str,
     to_component: str,
-) -> list[ComponentGraph | ComponentGraphResponse]:
+) -> list[FlatComponentGraph]:
     select_desired_mapping = select(ComponentGraph).where(
         ComponentGraph.from_group == from_group,
         ComponentGraph.from_component == from_component,
@@ -56,7 +63,7 @@ def subset_graph(
     db_session: Session,
     recursive: bool = False,
     upward: bool = False,
-) -> list[ComponentGraph | ComponentGraphResponse]:
+) -> list[FlatComponentGraph]:
     result = []
     stmt = select(ComponentGraph)
     if upward:

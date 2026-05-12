@@ -1,7 +1,10 @@
+import json
+
 from responses import RequestsMock, Response, matchers
 
 from cachet_adapter.models.scripts import ComponentData
 from cachet_adapter.scripts.load_components import load_components
+from test.conftest import TEST_RESOURCES
 
 
 def a_component_creation_responses(responses: RequestsMock) -> tuple[Response, Response]:
@@ -45,7 +48,10 @@ def a_component_creation_responses(responses: RequestsMock) -> tuple[Response, R
 def test_load_components(mocked_api, responses):
     a_component_creation_responses(responses=responses)
 
-    data = ComponentData({'general': [{'name': 'a'}]})
+    with open(TEST_RESOURCES / 'components.json', 'r') as f:
+        raw_data = json.load(f)
+    data = ComponentData(raw_data)
+
     result_ids = load_components(api=mocked_api, data=data)
     assert result_ids == {1: [1]}
 

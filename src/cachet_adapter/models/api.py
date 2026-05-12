@@ -9,3 +9,8 @@ class AdaptResponse(BaseModel):
 
 class ComponentGraphResponse(ComponentGraph):
     transitive: bool = False
+
+
+type FlatComponentGraph = ComponentGraph | ComponentGraphResponse
+
+type NestedComponentGraph = dict[str, dict[str, list[FlatComponentGraph]]]

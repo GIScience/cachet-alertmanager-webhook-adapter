@@ -1,0 +1,2 @@
+from_group,from_component,to_group,to_component,relationship
+,a,,b,requires

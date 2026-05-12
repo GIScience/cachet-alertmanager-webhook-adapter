@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from pydantic import HttpUrl
 from sqlalchemy import Engine, StaticPool
@@ -7,6 +9,8 @@ from starlette.testclient import TestClient
 from cachet_adapter.api import app
 from cachet_adapter.models.database import ComponentGraph, ComponentRelationship
 from cachet_adapter.utils.cachetapi import CachetApi
+
+TEST_RESOURCES = Path(__file__).parent / 'resources'
 
 
 @pytest.fixture

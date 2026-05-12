@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from sqlmodel import Session
 from starlette.requests import Request
 
-from cachet_adapter.models.api import ComponentGraphResponse
+from cachet_adapter.models.api import ComponentGraphResponse, FlatComponentGraph, NestedComponentGraph
 from cachet_adapter.models.database import (
     NONE_GROUP_STR,
     ComponentGraph,
@@ -43,9 +43,19 @@ def get_component_mapping(
 def alter_component_mapping(
     mapping: ComponentGraph,
     request: Request,
-) -> Sequence[ComponentGraph]:
+) -> list[FlatComponentGraph]:
     with Session(request.app.state.db_engine) as db_session:
-        linked_components = upsert_mapping(db_session=db_session, mapping=mapping)
+        linked_components = upsert_mapping(db_session=db_session, mappings=[mapping])
+    return linked_components.popitem()[1].popitem()[1]
+
+
+@router.post(path='', status_code=200, summary='Alter the component mapping graph with multiple dependencies')
+def alter_component_mappings(
+    mapping: list[ComponentGraph],
+    request: Request,
+) -> NestedComponentGraph:
+    with Session(request.app.state.db_engine) as db_session:
+        linked_components = upsert_mapping(db_session=db_session, mappings=mapping)
     return linked_components
 
 

@@ -38,9 +38,9 @@ The adapter has the following environment variables:
 #### Setup
 
 Running the adapter on a bare setup works but is not very useful.
-To quickly load your custom data, we provide a helper script: `load-components`.
+To quickly load your custom data, we provide two helper scripts: `load-components` and `load-dependencies`.
 
-It reads in a JSON file and creates the specified components in Cachet.
+The first one reads in a JSON file and creates the specified components in Cachet.
 
 ```shell
 uv run load-components --component-file /path/to/file.json
@@ -59,6 +59,20 @@ The component file must have the format
   ]
 }
 ```
+
+The second one loads a list of dependencies into the adapter.
+
+```shell
+uv run load-dependencies <adapter-url> --graph-file /path/to/file.csv
+```
+
+The dependency file must have the format
+
+```csv
+from_group,from_component,to_group,to_component,relationship
+<from_group>,<from_component>,<to_group>,<to_component>,<optional or required>
+```
+
 
 ## Run
 

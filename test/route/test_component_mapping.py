@@ -356,6 +356,36 @@ def test_put_mapping_changed(mocked_client, load_component_chain):
     ]
 
 
+def test_post_mapping(mocked_client):
+    response = mocked_client.post(
+        '/component-mapping',
+        json=[
+            {
+                'from_component': 'a',
+                'to_component': 'd',
+                'relationship': 'requires',
+            }
+        ],
+    )
+
+    assert response.status_code == 200
+
+    flat_mapping = [
+        {
+            'from_group': '',
+            'from_component': 'a',
+            'to_group': '',
+            'to_component': 'd',
+            'relationship': 'requires',
+        },
+    ]
+    expected_response = {'': {'a': flat_mapping}}
+    assert response.json() == expected_response
+
+    response = mocked_client.get('/component-mapping', params={'from_component': 'a'})
+    assert response.json() == flat_mapping
+
+
 def test_delete_existing_mapping(mocked_client, load_component_triangle):
     response = mocked_client.delete(
         '/component-mapping',
