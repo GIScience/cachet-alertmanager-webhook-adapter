@@ -1,10 +1,13 @@
 import argparse
 import json
+import logging
 
 from cachet_adapter.models.cachet import CachetGroupAttributes
 from cachet_adapter.models.scripts import ComponentData
 from cachet_adapter.settings import AdapterSettings
 from cachet_adapter.utils.cachetapi import CachetApi
+
+log = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
@@ -14,11 +17,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--component-file', type=argparse.FileType('r'), dest='component_file', default='data/components.json'
     )
+    parser.add_argument(
+        '--prune',
+        action='store_true',
+        dest='prune',
+        default=False,
+        description='!Attention: danger zone! This will delete any groups and components not specified '
+        'in the component file. Cachet will then be in-synch with the components file.',
+    )
     args = parser.parse_args()
     return args
 
 
-def load_components(api: CachetApi, data: ComponentData) -> dict[int, list[int]]:
+def load_components(api: CachetApi, data: ComponentData, prune: bool = False) -> dict[int, list[int]]:
     result = dict()
     available_groups = dict()
     available_components = set()
@@ -44,6 +55,17 @@ def load_components(api: CachetApi, data: ComponentData) -> dict[int, list[int]]
                 available_components.remove(component_id)
             group_component_id_list.append(component_id)
         result[group_id] = group_component_id_list
+    if prune:
+        for group_id in available_groups.values():
+            api.delete_group(group_id=group_id)
+        for component_id in available_components:
+            api.delete_component(component_id=component_id)
+    else:
+        log.warning(
+            f'The group with IDs {available_groups.values()} and the component with IDs {available_components} are not '
+            'specified in the input data but are present on the server.'
+        )
+
     return result
 
 
@@ -55,7 +77,7 @@ def main() -> None:
     settings = AdapterSettings()
     api = CachetApi(base_url=settings.cachet_api_url, token=settings.cachet_token)
 
-    load_components(api=api, data=component_data)
+    load_components(api=api, data=component_data, prune=args.prune)
 
 
 if __name__ == '__main__':

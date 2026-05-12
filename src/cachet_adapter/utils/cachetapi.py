@@ -61,6 +61,9 @@ class CachetApi:
         group_id = response_group.data.id
         return group_id
 
+    def delete_group(self, group_id: int) -> None:
+        self.session.delete(f'{self.base_url}/component-groups/{group_id}')
+
     def get_potential_components(self, component_name: str) -> CachetComponentQueryResponse:
         querystring = {'filter[name]': component_name, 'include': 'group'}
         response = self.session.get(f'{self.base_url}/components', params=querystring)
@@ -95,6 +98,9 @@ class CachetApi:
         response_component = CachetComponentCreateResponse.model_validate(response_json)
         component_id = response_component.data.id
         return component_id
+
+    def delete_component(self, component_id: int) -> None:
+        self.session.delete(f'{self.base_url}/components/{component_id}')
 
     def create_incident(self, incident_json: dict[str, Any]) -> int:
         response = self.session.post(f'{self.base_url}/incidents', json=incident_json)

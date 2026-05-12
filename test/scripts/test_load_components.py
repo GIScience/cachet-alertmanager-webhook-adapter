@@ -86,3 +86,53 @@ def test_dont_load_components_that_exist(mocked_api, responses):
 
     assert group_create_request.call_count == 1
     assert component_create_request.call_count == 1
+
+
+def test_sync_components(mocked_api, responses):
+    a_component_creation_responses(responses=responses)
+
+    cachet_response = {
+        'data': [
+            {'id': '1', 'attributes': {'name': 'general'}, 'relationships': {'components': {'data': [{'id': '1'}]}}}
+        ]
+    }
+    responses.get('http://test-cachet/api/component-groups', json=cachet_response)
+
+    cachet_request = {'name': 'special', 'visible': True}
+    cachet_response = {'data': {'id': '2', 'attributes': {'name': 'special'}}}
+    responses.post(
+        'http://test-cachet/api/component-groups',
+        match=[matchers.json_params_matcher(cachet_request)],
+        json=cachet_response,
+    )
+
+    cachet_response = {
+        'data': [],
+    }
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
+        json=cachet_response,
+    )
+
+    cachet_request = {
+        'name': 'b',
+        'status': 1,
+        'link': '-',
+        'description': '-',
+        'component_group_id': 2,
+    }
+    cachet_response = {'data': {'id': '2', 'name': 'b'}}
+    responses.post(
+        'http://test-cachet/api/components',
+        match=[matchers.json_params_matcher(cachet_request)],
+        json=cachet_response,
+    )
+
+    responses.delete('http://test-cachet/api/components/1')
+    responses.delete('http://test-cachet/api/component-groups/1')
+
+    data = ComponentData({'general': [{'name': 'a'}]})
+    load_components(api=mocked_api, data=data)
+    data = ComponentData({'special': [{'name': 'b'}]})
+    load_components(api=mocked_api, data=data, prune=True)

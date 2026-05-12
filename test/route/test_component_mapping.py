@@ -386,6 +386,84 @@ def test_post_mapping(mocked_client):
     assert response.json() == flat_mapping
 
 
+def test_post_mapping_no_prune(mocked_client, load_component_chain):
+    response = mocked_client.post(
+        '/component-mapping',
+        json=[
+            {
+                'from_component': 'a',
+                'to_component': 'c',
+                'relationship': 'requires',
+            }
+        ],
+    )
+
+    assert response.status_code == 200
+
+    flat_mapping = [
+        {
+            'from_group': '',
+            'from_component': 'a',
+            'to_group': '',
+            'to_component': 'b',
+            'relationship': 'requires',
+        },
+        {
+            'from_group': '',
+            'from_component': 'a',
+            'to_group': '',
+            'to_component': 'c',
+            'relationship': 'requires',
+        },
+    ]
+    expected_response = {'': {'a': flat_mapping}}
+    assert response.json() == expected_response
+
+    response = mocked_client.get('/component-mapping')
+    assert response.json() == [
+        flat_mapping[0],
+        {
+            'from_group': '',
+            'from_component': 'b',
+            'to_group': '',
+            'to_component': 'c',
+            'relationship': 'optional',
+        },
+        flat_mapping[1],
+    ]
+
+
+def test_post_mapping_prune(mocked_client, load_component_chain):
+    response = mocked_client.post(
+        '/component-mapping',
+        json=[
+            {
+                'from_component': 'a',
+                'to_component': 'c',
+                'relationship': 'requires',
+            }
+        ],
+        params={'prune': True},
+    )
+
+    assert response.status_code == 200
+
+    flat_mapping = [
+        {
+            'from_group': '',
+            'from_component': 'a',
+            'to_group': '',
+            'to_component': 'c',
+            'relationship': 'requires',
+        },
+    ]
+    expected_response = {'': {'a': flat_mapping}}
+    assert response.json() == expected_response
+
+    response = mocked_client.get('/component-mapping')
+    assert response.json() == flat_mapping
+
+
 def test_delete_existing_mapping(mocked_client, load_component_triangle):
     response = mocked_client.delete(
         '/component-mapping',

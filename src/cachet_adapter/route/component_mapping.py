@@ -1,6 +1,7 @@
 from typing import Optional, Sequence
 
 from fastapi import APIRouter, HTTPException
+from sqlalchemy import delete
 from sqlmodel import Session
 from starlette.requests import Request
 
@@ -51,11 +52,18 @@ def alter_component_mapping(
 
 @router.post(path='', status_code=200, summary='Alter the component mapping graph with multiple dependencies')
 def alter_component_mappings(
-    mapping: list[ComponentGraph],
+    mappings: list[ComponentGraph],
     request: Request,
+    prune: bool = False,
 ) -> NestedComponentGraph:
     with Session(request.app.state.db_engine) as db_session:
-        linked_components = upsert_mapping(db_session=db_session, mappings=mapping)
+        if prune:
+            stmt = delete(ComponentGraph)
+            db_session.exec(stmt)
+            db_session.commit()
+
+        linked_components = upsert_mapping(db_session=db_session, mappings=mappings)
+
     return linked_components
 
 
