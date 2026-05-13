@@ -1,0 +1,38 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "schedule": [
+    "* * 1 * *"
+  ],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "automerge": true,
+      "groupName": "dependency patches"
+    },
+    {
+      "matchUpdateTypes": [
+        "minor",
+        "lockFileMaintenance"
+      ],
+      "schedule": [
+        "* 0-3 1 * *"
+      ],
+      "groupName": "dependency feature release updates"
+    },
+    {
+      "matchDepNames": [
+        "python"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ],
+      "minimumReleaseAge": "12 months"
+    }
+  ]
+}
