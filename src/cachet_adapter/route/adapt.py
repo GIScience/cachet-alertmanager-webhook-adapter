@@ -43,7 +43,7 @@ async def adapt(alertmanager: AlertmanagerWebhook, request: Request) -> AdaptRes
 
 
 def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> int:
-    alert_component_group = alert.labels.org or NONE_GROUP_STR
+    alert_component_group = alert.labels.cachet_group or alert.labels.org or NONE_GROUP_STR
     alert_component_status = extract_alert_component_status(severity=alert.labels.severity)
     alert_component_name = alert.labels.cachet_component or alert.labels.job
     alert_component_id = cachet_api.get_component_id(
@@ -73,6 +73,8 @@ def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> i
                 )
                 component = IncidentComponent(id=dependent_component_id, status=dependent_component_status)
                 linked_components.add(component)
+
+    # TODO: should we create an incident if the linked-components are not there?
 
     incident = Incident(
         name=alert.annotations.title,

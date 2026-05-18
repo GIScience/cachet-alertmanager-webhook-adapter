@@ -140,6 +140,58 @@ def test_adapt_creates_incident_matching_group(mocked_client, responses):
         'alerts': [
             {
                 'status': 'firing',
+                'labels': {'job': 'a', 'cachet_group': 'special'},
+                'annotations': {
+                    'description': 'Component a is down.',
+                    'title': 'Component a down',
+                },
+                'startsAt': '2025-11-20T15:54:41.898000Z',
+                'fingerprint': 'fingerprint',
+            }
+        ]
+    }
+
+    response = mocked_client.post('/adapt', json=alertmanager_request)
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+
+def test_adapt_creates_incident_matching_org(mocked_client, responses):
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [
+                {'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}},
+                {'id': '2', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '2'}}}},
+            ],
+            'included': [
+                {'id': '1', 'attributes': {'name': 'general'}},
+                {'id': '2', 'attributes': {'name': 'special'}},
+            ],
+        },
+    )
+
+    cachet_request = {
+        'name': 'Component a down',
+        'status': 0,
+        'message': 'Component a is down.',
+        'visible': True,
+        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'components': [{'id': 2, 'status': 4}],
+    }
+    cachet_response = {'data': {'id': '30'}}
+    responses.post(
+        'http://test-cachet/api/incidents',
+        match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
+        json=cachet_response,
+    )
+
+    alertmanager_request = {
+        'alerts': [
+            {
+                'status': 'firing',
                 'labels': {'job': 'a', 'org': 'special'},
                 'annotations': {
                     'description': 'Component a is down.',

@@ -73,7 +73,6 @@ from_group,from_component,to_group,to_component,relationship
 <from_group>,<from_component>,<to_group>,<to_component>,<optional or required>
 ```
 
-
 ## Run
 
 Now start the adapter using `docker compose up`.
@@ -119,12 +118,12 @@ Receives Alertmanager webhook payloads and creates/updates Cachet incidents.
 
 #### Alert Labels
 
-| Label              | Required | Description                                                                  |
-|--------------------|----------|------------------------------------------------------------------------------|
-| `job`              | Yes      | Component name (used to match Cachet component)                              |
-| `cachet_component` | No       | Override `job` with a custom component name                                  |
-| `severity`         | No       | Alert severity: `critical`, `error`, `warning`, `info` (default: `critical`) |
-| `org`              | No       | Component group name (default: `''`, matches ungrouped components)           |
+| Label                   | Required | Description                                                                  |
+|-------------------------|----------|------------------------------------------------------------------------------|
+| `job`                   | Yes      | Component name (used to match Cachet component)                              |
+| `cachet_group` or `org` | No       | Component group name (default: `''`, matches ungrouped components)           |
+| `cachet_component`      | No       | Override `job` with a custom component name                                  |
+| `severity`              | No       | Alert severity: `critical`, `error`, `warning`, `info` (default: `critical`) |
 
 #### Severity Mapping
 
@@ -341,9 +340,9 @@ If your Prometheus job names don't match Cachet component names, use the `cachet
   expr: db_connections == 0
   labels:
     job: "postgres-exporter"
+    cachet_group: "infrastructure"
     cachet_component: "Primary Database"
     severity: critical
-    org: "infrastructure"
   annotations:
     title: "Database Connection Failed"
     description: "Cannot connect to the primary database."

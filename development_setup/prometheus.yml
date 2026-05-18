@@ -36,7 +36,7 @@ scrape_configs:
     static_configs:
       - targets: [ 'localhost:9102' ]
         labels:
-          org: "special"
+          cachet_group: "special"
     metrics_path: '/probe'
     params:
       module: [ http_2xx ]

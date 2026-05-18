@@ -19,6 +19,7 @@ class AlertmanagerSeverity(StrEnum):
 
 class AlertmanagerLabel(BaseModel):
     job: str
+    cachet_group: Optional[str] = None
     cachet_component: Optional[str] = None
     severity: AlertmanagerSeverity | str = AlertmanagerSeverity.CRITICAL
     org: Optional[str] = None
