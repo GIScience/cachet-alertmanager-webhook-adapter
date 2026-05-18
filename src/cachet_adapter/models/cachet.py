@@ -17,6 +17,10 @@ class IncidentStatus(IntEnum):
     FIXED = 4
 
 
+class CachetIdObject(BaseModel):
+    id: Annotated[int, Field(ge=1)]
+
+
 class BaseComponent(BaseModel):
     name: str
     description: Optional[str] = '-'
@@ -42,24 +46,16 @@ class Incident(BaseModel):
     components: Optional[list[IncidentComponent]] = None
 
 
-class CachetIncidentResponseData(BaseModel):
-    id: int
-
-
 class CachetIncidentResponse(BaseModel):
-    data: CachetIncidentResponseData
-
-
-class CachetRelationshipGroupData(BaseModel):
-    id: int
+    data: CachetIdObject
 
 
 class CachetRelationshipGroup(BaseModel):
-    data: Optional[CachetRelationshipGroupData] = None
+    data: Optional[CachetIdObject] = None
 
 
 class CachetRelationshipComponent(BaseModel):
-    data: list[CachetRelationshipGroupData]
+    data: list[CachetIdObject]
 
 
 class CachetComponentRelationships(BaseModel):
@@ -101,7 +97,7 @@ class CachetGroupQueryResponse(BaseModel):
 
 
 class CachetComponentCreateResponse(BaseModel):
-    data: Component
+    data: CachetIdObject
 
 
 class CachetGroupCreateResponse(BaseModel):

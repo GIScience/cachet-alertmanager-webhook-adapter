@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
         action='store_true',
         dest='prune',
         default=False,
-        description='!Attention: danger zone! This will delete any groups and components not specified '
+        help='!Attention: danger zone! This will delete any groups and components not specified '
         'in the component file. Cachet will then be in-synch with the components file.',
     )
     args = parser.parse_args()
@@ -31,13 +31,13 @@ def parse_args() -> argparse.Namespace:
 
 def load_components(api: CachetApi, data: ComponentData, prune: bool = False) -> dict[int, list[int]]:
     result = dict()
+
     available_groups = dict()
-    available_components = set()
+    available_components = dict()
     for group in api.list_groups():
         available_groups[group.attributes.name] = group.id
-        if group.relationships:
-            for component in group.relationships.components.data:
-                available_components.add(component.id)
+    for component in api.list_components().data:
+        available_components[component.attributes.name] = component.id
 
     for group_name, components in data.root.items():
         if group_name not in available_groups.keys():
@@ -48,17 +48,18 @@ def load_components(api: CachetApi, data: ComponentData, prune: bool = False) ->
 
         group_component_id_list = list()
         for component in components:
-            component_id = api.get_component_id(component_group=group_name, component_name=component.name)
-            if component_id is None:
+            if component.name not in available_components.keys():
                 component_id = api.create_component(component=component, group_id=group_id)
             else:
-                available_components.remove(component_id)
+                component_id = available_components.pop(component.name)
             group_component_id_list.append(component_id)
+
         result[group_id] = group_component_id_list
+
     if prune:
         for group_id in available_groups.values():
             api.delete_group(group_id=group_id)
-        for component_id in available_components:
+        for component_id in available_components.values():
             api.delete_component(component_id=component_id)
     else:
         log.warning(

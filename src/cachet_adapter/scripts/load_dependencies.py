@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
         action='store_true',
         dest='prune',
         default=False,
-        description='!Attention: danger zone! This will delete any dependencies not specified '
+        help='!Attention: danger zone! This will delete any dependencies not specified '
         'in the dependency file. The Cachet Adapter will then be in-synch with the file.',
     )
     args = parser.parse_args()

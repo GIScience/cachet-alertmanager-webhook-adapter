@@ -24,7 +24,7 @@ def a_component_creation_responses(responses: RequestsMock) -> tuple[Response, R
     }
     responses.get(
         'http://test-cachet/api/components',
-        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        match=[matchers.query_param_matcher({'include': 'group'})],
         json=cachet_response,
     )
 
@@ -76,7 +76,7 @@ def test_dont_load_components_that_exist(mocked_api, responses):
     }
     responses.get(
         'http://test-cachet/api/components',
-        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        match=[matchers.query_param_matcher({'include': 'group'})],
         json=cachet_response,
     )
 
@@ -107,11 +107,16 @@ def test_sync_components(mocked_api, responses):
     )
 
     cachet_response = {
-        'data': [],
+        'data': [
+            {'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}},
+        ],
+        'included': [
+            {'id': '1', 'attributes': {'name': 'general'}},
+        ],
     }
     responses.get(
         'http://test-cachet/api/components',
-        match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
+        match=[matchers.query_param_matcher({'include': 'group'})],
         json=cachet_response,
     )
 

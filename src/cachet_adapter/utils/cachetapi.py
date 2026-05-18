@@ -64,8 +64,10 @@ class CachetApi:
     def delete_group(self, group_id: int) -> None:
         self.session.delete(f'{self.base_url}/component-groups/{group_id}')
 
-    def get_potential_components(self, component_name: str) -> CachetComponentQueryResponse:
-        querystring = {'filter[name]': component_name, 'include': 'group'}
+    def list_components(self, component_name: Optional[str] = None) -> CachetComponentQueryResponse:
+        querystring = {'include': 'group'}
+        if component_name:
+            querystring = querystring | {'filter[name]': component_name}
         response = self.session.get(f'{self.base_url}/components', params=querystring)
         response.raise_for_status()
         response_json = response.json()
@@ -73,7 +75,7 @@ class CachetApi:
         return cachet_response
 
     def get_component_id(self, component_group: str, component_name: str) -> Optional[int]:
-        cachet_response = self.get_potential_components(component_name=component_name)
+        cachet_response = self.list_components(component_name=component_name)
 
         group_lookup = dict()
         for cachet_group in cachet_response.included:
