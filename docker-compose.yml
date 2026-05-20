@@ -8,3 +8,24 @@ services:
     ports:
       - "8002:8002"
     restart: unless-stopped
+
+  load-components:
+    build:
+      context: .
+    command: load-components --prune
+    volumes:
+      - ./.env:/app/.env
+      - ./data:/app/data
+    profiles:
+      - migration
+
+  load-dependency-graph:
+    build:
+      context: .
+    command: load-dependencies http://adapter:8002 --prune
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - adapter
+    profiles:
+      - migration

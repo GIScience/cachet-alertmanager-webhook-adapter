@@ -12,7 +12,8 @@ from cachet_adapter.models.database import (
 )
 from cachet_adapter.utils.storage import delete_mapping, subset_graph, upsert_mapping
 
-router = APIRouter(prefix='/component-mapping')
+COMPONENT_MAPPING_PATH = 'component-mapping'
+router = APIRouter(prefix=f'/{COMPONENT_MAPPING_PATH}')
 
 
 @router.get(path='', status_code=200, summary='Get the component mapping graph')

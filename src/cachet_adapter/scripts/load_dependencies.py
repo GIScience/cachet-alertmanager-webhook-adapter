@@ -3,6 +3,8 @@ import csv
 
 import requests
 
+from cachet_adapter.route.component_mapping import COMPONENT_MAPPING_PATH
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -37,7 +39,7 @@ def load_dependencies(
     adapter_url: str,
     prune: bool = False,
 ) -> None:
-    response = requests.post(f'{adapter_url}/component-mapping', json=data, params={'prune': prune})
+    response = requests.post(f'{adapter_url}/{COMPONENT_MAPPING_PATH}', json=data, params={'prune': prune})
     response.raise_for_status()
 
 
