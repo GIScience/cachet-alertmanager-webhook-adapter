@@ -22,7 +22,8 @@ from cachet_adapter.models.database import (
 from cachet_adapter.utils.cachetapi import CachetApi
 from cachet_adapter.utils.storage import get_incident_id, save_incident_id, unique_dependent_components
 
-router = APIRouter(prefix='/adapt')
+ADAPT_ROUTE = '/adapt'
+router = APIRouter(prefix=ADAPT_ROUTE)
 
 
 @router.post(
