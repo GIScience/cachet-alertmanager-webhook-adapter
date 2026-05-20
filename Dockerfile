@@ -2,6 +2,9 @@ FROM ghcr.io/astral-sh/uv:0.9-python3.13-bookworm-slim
 
 SHELL ["/bin/bash", "-c"]
 
+RUN apt update && \
+    apt install -y curl
+
 WORKDIR /app
 
 ENV UV_NO_DEV=1
