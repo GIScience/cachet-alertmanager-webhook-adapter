@@ -31,8 +31,6 @@ def a_component_creation_responses(responses: RequestsMock) -> tuple[Response, R
     cachet_request = {
         'name': 'a',
         'status': 1,
-        'link': '-',
-        'description': '-',
         'component_group_id': 1,
     }
     cachet_response = {'data': {'id': '1', 'name': 'a'}}
@@ -123,8 +121,6 @@ def test_sync_components(mocked_api, responses):
     cachet_request = {
         'name': 'b',
         'status': 1,
-        'link': '-',
-        'description': '-',
         'component_group_id': 2,
     }
     cachet_response = {'data': {'id': '2', 'name': 'b'}}

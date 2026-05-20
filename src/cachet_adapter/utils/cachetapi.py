@@ -92,7 +92,7 @@ class CachetApi:
         return None
 
     def create_component(self, component: BaseComponent, group_id: int) -> int:
-        component_data = component.model_dump(mode='json')
+        component_data = component.model_dump(mode='json', exclude_none=True)
         component_data = component_data | {'component_group_id': group_id}
         response = self.session.post(f'{self.base_url}/components', json=component_data)
         response.raise_for_status()

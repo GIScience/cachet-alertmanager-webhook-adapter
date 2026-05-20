@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import IntEnum
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Optional
 
 from pydantic import BaseModel, Field, HttpUrl, StringConstraints
 
@@ -23,8 +23,8 @@ class CachetIdObject(BaseModel):
 
 class BaseComponent(BaseModel):
     name: str
-    description: Optional[str] = '-'
-    link: Optional[HttpUrl | Literal['-']] = '-'
+    description: Optional[str] = None
+    link: Optional[HttpUrl] = None
     status: ComponentStatus = ComponentStatus.OPERATIONAL
 
 

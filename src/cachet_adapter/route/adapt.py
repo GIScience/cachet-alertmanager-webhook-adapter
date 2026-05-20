@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from fastapi import APIRouter
@@ -24,6 +25,8 @@ from cachet_adapter.models.database import (
 from cachet_adapter.utils.cachetapi import CachetApi
 from cachet_adapter.utils.storage import get_incident_id, save_incident_id, unique_dependent_components
 
+log = logging.getLogger(__name__)
+
 ADAPT_ROUTE = '/adapt'
 router = APIRouter(prefix=ADAPT_ROUTE)
 
@@ -47,12 +50,14 @@ async def adapt(alertmanager: AlertmanagerWebhook, request: Request) -> AdaptRes
 
 
 def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> Optional[int]:
+    log.debug(f'Adapting {alert.model_dump_json(indent=4)}')
     alert_component_group = alert.labels.cachet_group or alert.labels.org or NONE_GROUP_STR
     alert_component_status = extract_alert_component_status(severity=alert.labels.severity)
     alert_component_name = alert.labels.cachet_component or alert.labels.job
     alert_component_id = cachet_api.get_component_id(
         component_group=alert_component_group, component_name=alert_component_name
     )
+    log.debug(f'Component ID is {alert_component_id}')
 
     incident_visible = alert_component_id is not None
     incident_status = IncidentStatus.REPORTED if alert.status == AlertmanagerStatus.FIRING else IncidentStatus.FIXED
@@ -105,8 +110,9 @@ def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> O
             save_incident_id(db_session=db_session, fingerprint=alert.fingerprint, incident_id=incident_id)
 
         return incident_id
-
-    return None
+    else:
+        log.debug('Not creating incident because there are no linked components and no force-flag')
+        return None
 
 
 def extract_alert_component_status(severity: AlertmanagerSeverity | str) -> ComponentStatus:
