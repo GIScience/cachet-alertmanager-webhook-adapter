@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter
 from sqlmodel import Session
 from starlette.requests import Request
@@ -38,12 +40,13 @@ async def adapt(alertmanager: AlertmanagerWebhook, request: Request) -> AdaptRes
     with Session(request.app.state.db_engine) as db_session:
         for alert in alertmanager.alerts:
             incident_id = process_alert(db_session=db_session, cachet_api=cachet_api, alert=alert)
-            incident_ids.append(incident_id)
+            if incident_id:
+                incident_ids.append(incident_id)
 
     return AdaptResponse(incident_ids=incident_ids)
 
 
-def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> int:
+def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> Optional[int]:
     alert_component_group = alert.labels.cachet_group or alert.labels.org or NONE_GROUP_STR
     alert_component_status = extract_alert_component_status(severity=alert.labels.severity)
     alert_component_name = alert.labels.cachet_component or alert.labels.job
@@ -82,27 +85,28 @@ def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> i
                 component = IncidentComponent(id=dependent_component_id, status=dependent_component_status)
                 linked_components.add(component)
 
-    # TODO: should we create an incident if the linked-components are not there?
+    if len(linked_components) > 0 or alert.labels.cachet_incident_force:
+        incident = Incident(
+            name=incident_name,
+            status=incident_status,
+            message=incident_description,
+            occurred_at=alert.startsAt,
+            visible=incident_visible,
+            components=list(linked_components),
+        )
+        incident_json = incident.model_dump(exclude_none=True, mode='json')
 
-    incident = Incident(
-        name=incident_name,
-        status=incident_status,
-        message=incident_description,
-        occurred_at=alert.startsAt,
-        visible=incident_visible,
-        components=list(linked_components),
-    )
-    incident_json = incident.model_dump(exclude_none=True, mode='json')
+        incident_id = get_incident_id(db_session=db_session, fingerprint=alert.fingerprint)
 
-    incident_id = get_incident_id(db_session=db_session, fingerprint=alert.fingerprint)
+        if incident_id:
+            cachet_api.update_incident(incident_id=incident_id, incident_json=incident_json)
+        else:
+            incident_id = cachet_api.create_incident(incident_json=incident_json)
+            save_incident_id(db_session=db_session, fingerprint=alert.fingerprint, incident_id=incident_id)
 
-    if incident_id:
-        cachet_api.update_incident(incident_id=incident_id, incident_json=incident_json)
-    else:
-        incident_id = cachet_api.create_incident(incident_json=incident_json)
-        save_incident_id(db_session=db_session, fingerprint=alert.fingerprint, incident_id=incident_id)
+        return incident_id
 
-    return incident_id
+    return None
 
 
 def extract_alert_component_status(severity: AlertmanagerSeverity | str) -> ComponentStatus:

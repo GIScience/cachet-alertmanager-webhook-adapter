@@ -656,11 +656,13 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component_in_grou
     assert response.json() == {'incident_ids': [30]}
 
 
-def test_adapt_no_dependent_component(mocked_client, responses):
+def test_adapt_does_create_incident_without_linked_components_if_forced(mocked_client, responses):
     responses.get(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
-        json={'data': []},
+        json={
+            'data': [],
+        },
     )
 
     cachet_request = {
@@ -682,7 +684,7 @@ def test_adapt_no_dependent_component(mocked_client, responses):
         'alerts': [
             {
                 'status': 'firing',
-                'labels': {'job': 'a'},
+                'labels': {'job': 'a', 'cachet_incident_force': 'true'},
                 'annotations': {
                     'description': 'Component a is down.',
                     'title': 'Component a down',
@@ -697,6 +699,33 @@ def test_adapt_no_dependent_component(mocked_client, responses):
 
     assert response.status_code == 200
     assert response.json() == {'incident_ids': [30]}
+
+
+def test_adapt_no_dependent_component(mocked_client, responses):
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={'data': []},
+    )
+
+    alertmanager_request = {
+        'alerts': [
+            {
+                'status': 'firing',
+                'labels': {'job': 'a'},
+                'annotations': {
+                    'description': 'Component a is down.',
+                    'title': 'Component a down',
+                },
+                'startsAt': '2025-11-20T15:54:41.898000Z',
+                'fingerprint': 'fingerprint',
+            }
+        ]
+    }
+    response = mocked_client.post('/adapt', json=alertmanager_request)
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': []}
 
 
 def test_adapt_respects_severity(mocked_client, responses):
