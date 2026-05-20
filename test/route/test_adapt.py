@@ -57,6 +57,56 @@ def test_adapt_creates_incident(mocked_client, responses):
     assert response.json() == {'incident_ids': [30]}
 
 
+def test_adapt_request_without_annotations(mocked_client, responses):
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+
+    cachet_request = {
+        'name': 'Component a experiences issues',
+        'status': 0,
+        'message': 'Experiencing issues',
+        'visible': True,
+        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'components': [{'id': 1, 'status': 4}],
+    }
+    cachet_header = {
+        'Authorization': 'Bearer my-token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+    cachet_response = {'data': {'id': '30'}}
+    responses.post(
+        'http://test-cachet/api/incidents',
+        match=[
+            matchers.json_params_matcher(cachet_request, strict_match=False),
+            matchers.header_matcher(cachet_header),
+        ],
+        json=cachet_response,
+    )
+
+    alertmanager_request = {
+        'alerts': [
+            {
+                'status': 'firing',
+                'labels': {'job': 'a'},
+                'annotations': {},
+                'startsAt': '2025-11-20T15:54:41.898000Z',
+                'fingerprint': 'fingerprint',
+            }
+        ]
+    }
+
+    response = mocked_client.post('/adapt', json=alertmanager_request)
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+
 def test_adapt_creates_incident_matching_component_name(mocked_client, responses):
     responses.get(
         'http://test-cachet/api/components',
@@ -464,9 +514,9 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component(
     )
 
     cachet_request = {
-        'name': 'Component b down',
+        'name': 'A required downstream component experiences issues',
         'status': 0,
-        'message': 'Component b is down.',
+        'message': 'Experiencing issues',
         'visible': False,
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 1, 'status': 4}],
@@ -571,9 +621,9 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component_in_grou
     )
 
     cachet_request = {
-        'name': 'Component b down',
+        'name': 'A required downstream component experiences issues',
         'status': 0,
-        'message': 'Component b is down.',
+        'message': 'Experiencing issues',
         'visible': False,
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 1, 'status': 4}],
@@ -614,9 +664,9 @@ def test_adapt_no_dependent_component(mocked_client, responses):
     )
 
     cachet_request = {
-        'name': 'Component a down',
+        'name': 'A required downstream component experiences issues',
         'status': 0,
-        'message': 'Component a is down.',
+        'message': 'Experiencing issues',
         'visible': False,
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [],

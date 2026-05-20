@@ -26,14 +26,15 @@ class AlertmanagerLabel(BaseModel):
 
 
 class AlertmanagerAnnotation(BaseModel):
-    description: str
-    title: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    summary: Optional[str] = None
 
 
 class Alert(BaseModel):
     status: AlertmanagerStatus
     labels: AlertmanagerLabel
-    annotations: AlertmanagerAnnotation
+    annotations: AlertmanagerAnnotation = AlertmanagerAnnotation()
     startsAt: datetime  # noqa: N815
     fingerprint: str
 

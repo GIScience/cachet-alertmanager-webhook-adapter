@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import IntEnum
 from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, StringConstraints
 
 
 class ComponentStatus(IntEnum):
@@ -40,7 +40,7 @@ class IncidentComponent(BaseModel, frozen=True):
 class Incident(BaseModel):
     name: Annotated[str, Field(max_length=255)]
     status: Optional[IncidentStatus] = None
-    message: Optional[str] = None
+    message: Annotated[str, StringConstraints(min_length=1)]
     visible: bool = False
     occurred_at: Optional[datetime] = None
     components: Optional[list[IncidentComponent]] = None

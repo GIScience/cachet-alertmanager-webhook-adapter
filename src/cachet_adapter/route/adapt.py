@@ -55,8 +55,15 @@ def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> i
     incident_status = IncidentStatus.REPORTED if alert.status == AlertmanagerStatus.FIRING else IncidentStatus.FIXED
 
     linked_components = set()
+
+    incident_description = 'Experiencing issues'
     if alert_component_id:
+        incident_name = alert.annotations.title or f'Component {alert_component_name} experiences issues'
+        incident_description = alert.annotations.summary or alert.annotations.description or incident_description
+
         linked_components.add(IncidentComponent(id=alert_component_id, status=alert_component_status))
+    else:
+        incident_name = 'A required downstream component experiences issues'
 
     dependent_components = unique_dependent_components(
         group=alert_component_group, component=alert_component_name, db_session=db_session
@@ -78,9 +85,9 @@ def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> i
     # TODO: should we create an incident if the linked-components are not there?
 
     incident = Incident(
-        name=alert.annotations.title,
+        name=incident_name,
         status=incident_status,
-        message=alert.annotations.description,
+        message=incident_description,
         occurred_at=alert.startsAt,
         visible=incident_visible,
         components=list(linked_components),
