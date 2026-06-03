@@ -37,10 +37,14 @@ def load_components(api: CachetApi, data: ComponentData, prune: bool = False) ->
     for group in api.list_groups():
         available_groups[group.attributes.name] = group.id
     for component in api.list_components().data:
-        available_components[component.attributes.name] = component.id
+        available_components[component.attributes.name] = {
+            'id': component.id,
+            'group_id': component.relationships.group.data.id if component.relationships.group.data else None,
+        }
 
     for group_name, components in data.root.items():
-        if group_name not in available_groups.keys():
+        group_exists = group_name in available_groups.keys()
+        if not group_exists:
             group = CachetGroupAttributes(name=group_name)
             group_id = api.create_group(group=group)
         else:
@@ -48,10 +52,14 @@ def load_components(api: CachetApi, data: ComponentData, prune: bool = False) ->
 
         group_component_id_list = list()
         for component in components:
-            if component.name not in available_components.keys():
+            component_exists = (
+                component.name in available_components.keys()
+                and available_components[component.name]['group_id'] == group_id
+            )
+            if not component_exists:
                 component_id = api.create_component(component=component, group_id=group_id)
             else:
-                component_id = available_components.pop(component.name)
+                component_id = available_components.pop(component.name)['id']
             group_component_id_list.append(component_id)
 
         result[group_id] = group_component_id_list
@@ -59,12 +67,12 @@ def load_components(api: CachetApi, data: ComponentData, prune: bool = False) ->
     if prune:
         for group_id in available_groups.values():
             api.delete_group(group_id=group_id)
-        for component_id in available_components.values():
-            api.delete_component(component_id=component_id)
-    else:
+        for component in available_components.values():
+            api.delete_component(component_id=component['id'])
+    elif len(available_groups) > 0 or len(available_components) > 0:
         log.warning(
-            f'The group with IDs {available_groups.values()} and the component with IDs {available_components} are not '
-            'specified in the input data but are present on the server.'
+            f'The groups {available_groups} ({{group-name:id}}) and the components {available_components} '
+            'are not specified in the input data but are present on the server.'
         )
 
     return result
