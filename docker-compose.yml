@@ -19,7 +19,10 @@ services:
   load-components:
     build:
       context: .
-    entrypoint: load-components
+    entrypoint:
+      - uv
+      - run
+      - load-components
     volumes:
       - ./.env:/app/.env
       - ./data:/app/data
