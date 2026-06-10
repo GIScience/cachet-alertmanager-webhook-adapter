@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Optional
 
 import requests
@@ -14,8 +15,12 @@ from cachet_adapter.models.cachet import (
     CachetGroupCreateResponse,
     CachetGroupQueryResponse,
     CachetIncidentResponse,
+    CachetRelationshipComponent,
+    CachetSchedule,
 )
 from cachet_adapter.models.database import NONE_GROUP_STR
+
+log = logging.getLogger(__name__)
 
 
 class CachetApi:
@@ -88,7 +93,10 @@ class CachetApi:
                 cachet_group_name = NONE_GROUP_STR
 
             if component_group == cachet_group_name and component_name == component.attributes.name:
+                log.debug(f'Component ID is {component.id}')
                 return component.id
+
+        log.debug(f'Component {component_group}.{component_name} unknown.')
         return None
 
     def create_component(self, component: BaseComponent, group_id: int) -> int:
@@ -115,3 +123,32 @@ class CachetApi:
     def update_incident(self, incident_id: int, incident_json: dict[str, Any]) -> None:
         response = self.session.put(f'{self.base_url}/incidents/{incident_id}', json=incident_json)
         response.raise_for_status()
+
+    def list_schedule_ids(self) -> set[int]:
+        response = self.session.get(f'{self.base_url}/schedules')
+        response.raise_for_status()
+        response_json = response.json()
+        cachet_response = CachetRelationshipComponent.model_validate(response_json)
+        ids = {schedule.id for schedule in cachet_response.data}
+        return ids
+
+    def create_schedule(self, scheduled_incident: CachetSchedule) -> int:
+        response = self.session.post(f'{self.base_url}/schedules', json=scheduled_incident.model_dump(mode='json'))
+        response.raise_for_status()
+        response_json = response.json()
+        cachet_response = CachetIncidentResponse.model_validate(response_json)
+        schedule_id = cachet_response.data.id
+        return schedule_id
+
+    def update_schedule(self, schedule_id: int, scheduled_incident: CachetSchedule) -> None:
+        response = self.session.put(
+            f'{self.base_url}/schedules/{schedule_id}',
+            json=scheduled_incident.model_dump(mode='json', exclude={'name', 'message'}),
+        )
+        response.raise_for_status()
+
+    def delete_schedules(self, schedule_ids: list[int]) -> None:
+        log.debug(f'Deleting schedules {schedule_ids}')
+        for schedule_id in schedule_ids:
+            response = self.session.delete(f'{self.base_url}/schedules/{schedule_id}')
+            response.raise_for_status()

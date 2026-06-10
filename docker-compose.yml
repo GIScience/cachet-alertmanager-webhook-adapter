@@ -19,7 +19,7 @@ services:
   load-components:
     build:
       context: .
-    command: load-components --prune
+    entrypoint: load-components
     volumes:
       - ./.env:/app/.env
       - ./data:/app/data
@@ -29,7 +29,27 @@ services:
   load-dependency-graph:
     build:
       context: .
-    command: load-dependencies http://adapter:8002 --prune
+    entrypoint:
+      - uv
+      - run
+      - load-dependencies
+      - http://adapter:8002
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      adapter:
+        condition: service_healthy
+    profiles:
+      - migration
+
+  load-schedules:
+    build:
+      context: .
+    entrypoint:
+      - uv
+      - run
+      - load-schedules
+      - http://adapter:8002
     volumes:
       - ./data:/app/data
     depends_on:

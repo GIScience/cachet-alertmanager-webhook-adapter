@@ -15,15 +15,11 @@ from cachet_adapter.models.api import AdaptResponse
 from cachet_adapter.models.cachet import (
     ComponentStatus,
     Incident,
-    IncidentComponent,
     IncidentStatus,
 )
-from cachet_adapter.models.database import (
-    NONE_GROUP_STR,
-    ComponentRelationship,
-)
+from cachet_adapter.models.database import NONE_GROUP_STR
 from cachet_adapter.utils.cachetapi import CachetApi
-from cachet_adapter.utils.storage import get_incident_id, save_incident_id, unique_dependent_components
+from cachet_adapter.utils.storage import get_dependent_components, get_incident_id, save_incident_id
 
 log = logging.getLogger(__name__)
 
@@ -52,43 +48,25 @@ async def adapt(alertmanager: AlertmanagerWebhook, request: Request) -> AdaptRes
 def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> Optional[int]:
     log.debug(f'Adapting {alert.model_dump_json(indent=4)}')
     alert_component_group = alert.labels.cachet_group or alert.labels.org or NONE_GROUP_STR
-    alert_component_status = extract_alert_component_status(severity=alert.labels.severity)
     alert_component_name = alert.labels.cachet_component or alert.labels.job
-    alert_component_id = cachet_api.get_component_id(
-        component_group=alert_component_group, component_name=alert_component_name
-    )
-    log.debug(f'Component ID is {alert_component_id}')
+    alert_component_status = extract_alert_component_status(severity=alert.labels.severity)
 
-    incident_visible = alert_component_id is not None
+    linked_components, top_level_component_incident = get_dependent_components(
+        group=alert_component_group,
+        name=alert_component_name,
+        status=alert_component_status,
+        cachet_api=cachet_api,
+        db_session=db_session,
+    )
+
     incident_status = IncidentStatus.REPORTED if alert.status == AlertmanagerStatus.FIRING else IncidentStatus.FIXED
 
-    linked_components = set()
-
     incident_description = 'Experiencing issues'
-    if alert_component_id:
+    if top_level_component_incident:
         incident_name = alert.annotations.title or f'Component {alert_component_name} experiences issues'
         incident_description = alert.annotations.summary or alert.annotations.description or incident_description
-
-        linked_components.add(IncidentComponent(id=alert_component_id, status=alert_component_status))
     else:
         incident_name = 'A required downstream component experiences issues'
-
-    dependent_components = unique_dependent_components(
-        group=alert_component_group, component=alert_component_name, db_session=db_session
-    )
-
-    for dependent_component_group, dependent_components_in_group in dependent_components.items():
-        for dependent_component_name, dependent_component_relationship in dependent_components_in_group.items():
-            dependent_component_id = cachet_api.get_component_id(
-                component_group=dependent_component_group, component_name=dependent_component_name
-            )
-            if dependent_component_id:
-                dependent_component_status = extract_dependent_component_status(
-                    alert_component_status=alert_component_status,
-                    dependent_component_relationship=dependent_component_relationship,
-                )
-                component = IncidentComponent(id=dependent_component_id, status=dependent_component_status)
-                linked_components.add(component)
 
     if len(linked_components) > 0 or alert.labels.cachet_incident_force:
         incident = Incident(
@@ -96,7 +74,7 @@ def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> O
             status=incident_status,
             message=incident_description,
             occurred_at=alert.startsAt,
-            visible=incident_visible,
+            visible=top_level_component_incident,
             components=list(linked_components),
         )
         incident_json = incident.model_dump(exclude_none=True, mode='json')
@@ -124,14 +102,3 @@ def extract_alert_component_status(severity: AlertmanagerSeverity | str) -> Comp
         case _:
             component_status = ComponentStatus.PARTIAL_OUTAGE
     return component_status
-
-
-def extract_dependent_component_status(
-    alert_component_status: ComponentStatus, dependent_component_relationship: ComponentRelationship
-) -> ComponentStatus:
-    if (
-        alert_component_status == ComponentStatus.MAJOR_OUTAGE
-        and dependent_component_relationship == ComponentRelationship.REQUIRES
-    ):
-        return ComponentStatus.MAJOR_OUTAGE
-    return ComponentStatus.PARTIAL_OUTAGE

@@ -1,8 +1,15 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import IntEnum
 from typing import Annotated, Optional
 
-from pydantic import BaseModel, Field, HttpUrl, StringConstraints
+from pydantic import BaseModel, Field, HttpUrl, PlainSerializer, StringConstraints
+
+type CachetStr = Annotated[str, StringConstraints(min_length=1)]
+type CachetDateTime = Annotated[
+    datetime,
+    PlainSerializer(lambda _datetime: _datetime.astimezone(UTC).strftime('%Y-%m-%d %H:%M:%S'), return_type=str),
+]
+type CachetId = Annotated[int, Field(ge=1)]
 
 
 class ComponentStatus(IntEnum):
@@ -18,7 +25,7 @@ class IncidentStatus(IntEnum):
 
 
 class CachetIdObject(BaseModel):
-    id: Annotated[int, Field(ge=1)]
+    id: CachetId
 
 
 class BaseComponent(BaseModel):
@@ -29,18 +36,18 @@ class BaseComponent(BaseModel):
 
 
 class Component(BaseComponent):
-    id: Annotated[int, Field(ge=1)]
+    id: CachetId
 
 
 class IncidentComponent(BaseModel, frozen=True):
-    id: Annotated[int, Field(ge=1)]
+    id: CachetId
     status: ComponentStatus
 
 
 class Incident(BaseModel):
     name: Annotated[str, Field(max_length=255)]
     status: Optional[IncidentStatus] = None
-    message: Annotated[str, StringConstraints(min_length=1)]
+    message: CachetStr
     visible: bool = False
     occurred_at: Optional[datetime] = None
     components: Optional[list[IncidentComponent]] = None
@@ -102,3 +109,11 @@ class CachetComponentCreateResponse(BaseModel):
 
 class CachetGroupCreateResponse(BaseModel):
     data: CachetGroup
+
+
+class CachetSchedule(BaseModel):
+    name: CachetStr
+    message: CachetStr
+    scheduled_at: CachetDateTime
+    completed_at: CachetDateTime
+    components: list[IncidentComponent]

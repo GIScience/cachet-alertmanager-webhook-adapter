@@ -4,6 +4,7 @@
 
 data/components.json
 data/dependency_graph.csv
+data/schedules.ics
 cachet_adapter.sqlite
 docker-compose.override.yml
 

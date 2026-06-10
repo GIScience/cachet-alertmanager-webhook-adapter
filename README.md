@@ -38,9 +38,11 @@ The adapter has the following environment variables:
 #### Setup
 
 Running the adapter on a bare setup works but is not very useful.
-To quickly load your custom data, we provide two helper scripts: `load-components` and `load-dependencies`.
+To quickly load your custom data, we provide helper scripts.
 
-The first one reads in a JSON file and creates the specified components in Cachet.
+##### load-components
+
+It reads in a JSON file and creates the specified components in Cachet.
 
 ```shell
 uv run load-components --component-file /path/to/file.json
@@ -60,7 +62,9 @@ The component file must have the format
 }
 ```
 
-The second one loads a list of dependencies into the adapter.
+##### load-dependencies
+
+It loads a list of dependencies into the adapter.
 
 ```shell
 uv run load-dependencies <adapter-url> --graph-file /path/to/file.csv
@@ -71,6 +75,30 @@ The dependency file must have the format
 ```csv
 from_group,from_component,to_group,to_component,relationship
 <from_group>,<from_component>,<to_group>,<to_component>,<optional or required>
+```
+
+##### load-schedules
+
+It loads scheduled maintenances from an ICS source (file or URL).
+
+```shell
+uv run load-schedules <adapter-url> --file /path/to/file.ics
+```
+
+To link components to a scheduled downtime, the description can contain a JSON object specifying the affected components
+like so:
+
+```ics
+BEGIN:VCALENDAR
+PRODID:http://www.example.com/calendarapplication/
+BEGIN:VEVENT
+UID:3371b318-23a6-4621-b157-201e428c6e47
+SUMMARY:Update
+DESCRIPTION;ALTREP="data:text/html,%7B%22%22%3A%5B%22a%22%5D%7D":{"":["a"]}
+DTSTART;TZID=Europe/Berlin:20200910T220000
+DTEND;TZID=Europe/Berlin:20200919T215900
+END:VEVENT
+END:VCALENDAR
 ```
 
 ## Run

@@ -24,3 +24,8 @@ class ComponentGraph(SQLModel, table=True):
 class IncidentResolver(SQLModel, table=True):
     alertmanager_fingerprint: str = Field(primary_key=True, index=True, unique=True)
     cachet_id: int = Field(primary_key=True, index=True, unique=True)
+
+
+class ScheduleResolver(SQLModel, table=True):
+    ics_uid: str = Field(primary_key=True, index=True, unique=True)
+    cachet_id: int = Field(primary_key=True, index=True, unique=True)
