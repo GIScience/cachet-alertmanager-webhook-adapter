@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     )
 
     exclusive_group = parser.add_mutually_exclusive_group()
-    exclusive_group.add_argument('--file', type=argparse.FileType('r'), dest='file', default='data/schedules.ics')
+    exclusive_group.add_argument('--file', dest='file', default='data/schedules.ics')
     exclusive_group.add_argument('--url', dest='url', required=False)
 
     args = parser.parse_args()
@@ -43,7 +43,8 @@ def main():
         response.raise_for_status()
         data = response.text
     else:
-        data = args.file.read()
+        with open(args.file, 'r') as f:
+            data = f.read()
     calendar = Calendar(data)
 
     load_schedules(
