@@ -116,4 +116,4 @@ class CachetSchedule(BaseModel):
     message: CachetStr
     scheduled_at: CachetDateTime
     completed_at: CachetDateTime
-    components: list[IncidentComponent]
+    components: Optional[list[IncidentComponent]]

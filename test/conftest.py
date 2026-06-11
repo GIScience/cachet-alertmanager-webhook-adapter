@@ -1,6 +1,8 @@
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+from freezegun import freeze_time
 from pydantic import HttpUrl
 from sqlalchemy import Engine, StaticPool
 from sqlmodel import Session, SQLModel, create_engine
@@ -11,6 +13,12 @@ from cachet_adapter.models.database import ComponentGraph, ComponentRelationship
 from cachet_adapter.utils.cachetapi import CachetApi
 
 TEST_RESOURCES = Path(__file__).parent / 'resources'
+
+
+@pytest.fixture
+def frozen_time():
+    with freeze_time(datetime(2026, 6, 1, 12, tzinfo=UTC)) as frozen_time:
+        yield frozen_time
 
 
 @pytest.fixture

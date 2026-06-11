@@ -1,10 +1,12 @@
 import argparse
 import json
 import logging
+from datetime import datetime, timedelta
 from json import JSONDecodeError
 
+import recurring_ical_events
 import requests
-from ics import Calendar
+from icalendar import Calendar
 
 from cachet_adapter.models.api import ScheduledIncident
 
@@ -45,37 +47,52 @@ def main():
     else:
         with open(args.file, 'r') as f:
             data = f.read()
-    calendar = Calendar(data)
+    calendar = Calendar.from_ical(data)
 
     load_schedules(
         calendar=calendar, adapter_url=args.adapter_url, target_event_titles=args.event_title, prune=args.prune
     )
 
 
-def load_schedules(calendar: Calendar, adapter_url: str, target_event_titles: list[str], prune: bool = False) -> None:
+def load_schedules(
+    calendar: Calendar,
+    adapter_url: str,
+    target_event_titles: list[str],
+    calendar_monitoring_time_range: timedelta = timedelta(weeks=4),
+    prune: bool = False,
+) -> None:
+    events = recurring_ical_events.of(calendar)._occurrences_between(
+        datetime.now() - calendar_monitoring_time_range, datetime.now() + calendar_monitoring_time_range
+    )
+
     schedules = list()
-    for event in calendar.events:
-        if len(target_event_titles) > 0 and event.name not in target_event_titles:
-            log.debug(f'Event {event.uid} is skipped.')
+    for event in events:
+        parent_event = event.as_component(keep_recurrence_attributes=True)
+        if len(target_event_titles) > 0 and parent_event.summary not in target_event_titles:
+            log.debug(f'Event {event.id} is skipped.')
             continue
 
         try:
-            components = json.loads(event.description)
-        except JSONDecodeError as e:
-            log.error(
-                f'Event description "{event.description}" for event {event.uid} does not contain a valid '
+            components = json.loads(parent_event.description)
+        except JSONDecodeError:
+            log.warning(
+                f'Event description '
+                f''
+                f'{parent_event.description}'
+                f''
+                f'for event {event.id.to_string()} does not contain a valid '
                 'component-set in JSON format.'
-                'Creating a scheduled downtime without linked components.',
-                exc_info=e,
+                'Creating a scheduled downtime without linked components.'
             )
-            components = {}
+            components = None
 
-        schedule_name = event.name or 'Scheduled Downtime'
+        schedule_name = parent_event.summary or 'Scheduled Downtime'
+        schedule_id = event.id.to_string()
         scheduled_incident = ScheduledIncident(
-            id=event.uid,
+            id=schedule_id,
             name=schedule_name,
-            scheduled_at=event.begin.datetime,
-            completed_at=event.end.datetime,
+            scheduled_at=event.start,
+            completed_at=event.end,
             components=components,
         )
         schedules.append(scheduled_incident.model_dump(mode='json'))

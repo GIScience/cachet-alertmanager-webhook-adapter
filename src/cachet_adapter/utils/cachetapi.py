@@ -133,7 +133,9 @@ class CachetApi:
         return ids
 
     def create_schedule(self, scheduled_incident: CachetSchedule) -> int:
-        response = self.session.post(f'{self.base_url}/schedules', json=scheduled_incident.model_dump(mode='json'))
+        response = self.session.post(
+            f'{self.base_url}/schedules', json=scheduled_incident.model_dump(mode='json', exclude_none=True)
+        )
         response.raise_for_status()
         response_json = response.json()
         cachet_response = CachetIncidentResponse.model_validate(response_json)
@@ -143,7 +145,7 @@ class CachetApi:
     def update_schedule(self, schedule_id: int, scheduled_incident: CachetSchedule) -> None:
         response = self.session.put(
             f'{self.base_url}/schedules/{schedule_id}',
-            json=scheduled_incident.model_dump(mode='json', exclude={'name', 'message'}),
+            json=scheduled_incident.model_dump(mode='json', exclude={'name', 'message'}, exclude_none=True),
         )
         response.raise_for_status()
 

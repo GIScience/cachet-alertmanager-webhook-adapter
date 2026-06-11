@@ -61,7 +61,7 @@ def process_schedule(
         message=scheduled_incident.message,
         scheduled_at=scheduled_incident.scheduled_at,
         completed_at=scheduled_incident.completed_at,
-        components=list(linked_components),
+        components=linked_components,
     )
 
     if schedule_id:
@@ -102,7 +102,10 @@ def clean_schedules(prune: bool, schedule_ids: list[int], cachet_api: CachetApi,
 
 def process_linked_components(
     cachet_api: CachetApi, db_session: Session, components: dict[str, list[str]]
-) -> set[IncidentComponent]:
+) -> Optional[list[IncidentComponent]]:
+    if components is None:
+        return None
+
     linked_components = set()
     for group, components in components.items():
         for component in components:
@@ -114,4 +117,4 @@ def process_linked_components(
                 db_session=db_session,
             )
             linked_components.update(sub_linked_components)
-    return linked_components
+    return list(linked_components)
