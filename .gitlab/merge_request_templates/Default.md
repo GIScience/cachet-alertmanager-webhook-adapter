@@ -6,4 +6,3 @@
 
 - [ ] I've updated the CHANGELOG.md and other documentation (if applicable)
 - [ ] I have added sufficient unit tests
-- [ ] I will make sure the commit follows the HeiGIT commit message guideline

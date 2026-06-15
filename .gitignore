@@ -9,3 +9,6 @@ cachet_adapter.sqlite
 docker-compose.override.yml
 
 __pycache__/
+
+.coverage
+coverage.xml
