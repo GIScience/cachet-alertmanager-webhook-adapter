@@ -62,6 +62,10 @@ The component file must have the format
 }
 ```
 
+Use `--prune` to delete any groups and components on Cachet that are not specified in the component file.
+This brings Cachet fully in sync with the file. Note that renaming a group or component is treated as a deletion
+and recreation, thereby losing existing linked incidents. To rename, do so manually in the Cachet UI instead.
+
 ##### load-dependencies
 
 It loads a list of dependencies into the adapter.
@@ -76,6 +80,9 @@ The dependency file must have the format
 from_group,from_component,to_group,to_component,relationship
 <from_group>,<from_component>,<to_group>,<to_component>,<optional or required>
 ```
+
+Use `--prune` to delete any dependencies not specified in the file.
+The adapter will then be fully in sync with the file.
 
 ##### load-schedules
 

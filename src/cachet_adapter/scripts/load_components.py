@@ -22,8 +22,12 @@ def parse_args() -> argparse.Namespace:
         action='store_true',
         dest='prune',
         default=False,
-        help='!Attention: danger zone! This will delete any groups and components not specified '
-        'in the component file. Cachet will then be in-synch with the components file.',
+        help='!Attention: danger zone!'
+        'This will delete any groups and components not specified in the component file. '
+        'Cachet will then be in-sync with the components file. '
+        'Note that renaming a group or component is treated as a deletion + re-creation, thereby losing existing '
+        'linked incidents. '
+        'Therefore, please manually rename groups and components in the Cachet UI to circumvent the problem!',
     )
     args = parser.parse_args()
     return args
