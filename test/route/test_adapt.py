@@ -517,7 +517,7 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component(
         'name': 'A required downstream component experiences issues',
         'status': 0,
         'message': 'Experiencing issues',
-        'visible': False,
+        'visible': True,
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 1, 'status': 4}],
     }
@@ -624,7 +624,7 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component_in_grou
         'name': 'A required downstream component experiences issues',
         'status': 0,
         'message': 'Experiencing issues',
-        'visible': False,
+        'visible': True,
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 1, 'status': 4}],
     }
@@ -669,7 +669,7 @@ def test_adapt_does_create_incident_without_linked_components_if_forced(mocked_c
         'name': 'A required downstream component experiences issues',
         'status': 0,
         'message': 'Experiencing issues',
-        'visible': False,
+        'visible': True,
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [],
     }
@@ -849,12 +849,8 @@ def test_adapt_updates_existing_incident_on_same_fingerprint(mocked_client, resp
             matchers.header_matcher(cachet_header),
             matchers.json_params_matcher(
                 {
-                    'name': 'Instance down',
                     'status': 0,
-                    'message': 'Service is down.',
-                    'visible': True,
                     'occurred_at': '2025-11-20T15:54:41.898000Z',
-                    'components': [{'id': 1, 'status': 4}],
                 }
             ),
         ],
@@ -904,12 +900,8 @@ def test_adapt_marks_incident_fixed_on_resolved_alert(mocked_client, responses):
         match=[
             matchers.json_params_matcher(
                 {
-                    'name': 'Instance down',
                     'status': 4,
-                    'message': 'Service is down.',
-                    'visible': True,
                     'occurred_at': '2025-11-20T15:54:41.898000Z',
-                    'components': [{'id': 1, 'status': 4}],
                 }
             ),
         ],

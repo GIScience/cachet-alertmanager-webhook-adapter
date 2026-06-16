@@ -45,7 +45,9 @@ async def adapt(alertmanager: AlertmanagerWebhook, request: Request) -> AdaptRes
     return AdaptResponse(incident_ids=incident_ids)
 
 
-def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> Optional[int]:
+def process_alert(
+    db_session: Session, cachet_api: CachetApi, alert: Alert, secondary_component_incident_visible: bool = True
+) -> Optional[int]:
     log.debug(f'Adapting {alert.model_dump_json(indent=4)}')
     alert_component_group = alert.labels.cachet_group or alert.labels.org or NONE_GROUP_STR
     alert_component_name = alert.labels.cachet_component or alert.labels.job
@@ -69,21 +71,23 @@ def process_alert(db_session: Session, cachet_api: CachetApi, alert: Alert) -> O
         incident_name = 'A required downstream component experiences issues'
 
     if len(linked_components) > 0 or alert.labels.cachet_incident_force:
+        visible = top_level_component_incident or secondary_component_incident_visible
         incident = Incident(
             name=incident_name,
             status=incident_status,
             message=incident_description,
             occurred_at=alert.startsAt,
-            visible=top_level_component_incident,
+            visible=visible,
             components=list(linked_components),
         )
-        incident_json = incident.model_dump(exclude_none=True, mode='json')
 
         incident_id = get_incident_id(db_session=db_session, fingerprint=alert.fingerprint)
 
         if incident_id:
+            incident_json = incident.model_dump(exclude_none=True, mode='json', include={'status', 'occurred_at'})
             cachet_api.update_incident(incident_id=incident_id, incident_json=incident_json)
         else:
+            incident_json = incident.model_dump(exclude_none=True, mode='json')
             incident_id = cachet_api.create_incident(incident_json=incident_json)
             save_incident_id(db_session=db_session, fingerprint=alert.fingerprint, incident_id=incident_id)
 
