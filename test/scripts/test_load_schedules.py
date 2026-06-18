@@ -40,6 +40,36 @@ def test_load_schedules(responses, frozen_time):
     load_schedules(calendar=calendar, adapter_url='http://test-adapter/adapter', target_event_titles=['Update'])
 
 
+def test_load_schedules_for_all_components(responses, frozen_time):
+    responses.post(
+        'http://test-adapter/adapter/schedule',
+        match=[
+            matchers.json_params_matcher(
+                [
+                    {
+                        'id': 'VEVENT##2026-06-01T12:00:00+02:00#8906ea5d-d770-4b62-956a-5c73f4e654f1',
+                        'name': 'Update',
+                        'message': 'A scheduled downtime',
+                        'scheduled_at': '2026-06-01T12:00:00+02:00',
+                        'completed_at': '2026-06-01T12:30:00+02:00',
+                        'components': 'all',
+                    },
+                ]
+            )
+        ],
+    )
+
+    with open(TEST_RESOURCES / 'schedules_all_components.ics', 'r') as f:
+        calendar = Calendar.from_ical(f.read())
+
+    load_schedules(
+        calendar=calendar,
+        adapter_url='http://test-adapter/adapter',
+        target_event_titles=['Update'],
+        calendar_monitoring_time_range=timedelta(weeks=3),
+    )
+
+
 def test_load_recurring_events(responses, frozen_time):
     responses.post(
         'http://test-adapter/adapter/schedule',

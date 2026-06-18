@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
@@ -16,7 +16,7 @@ class ScheduledIncident(BaseModel):
     message: str = 'A scheduled downtime'
     scheduled_at: datetime
     completed_at: datetime
-    components: Optional[dict[str, list[str]]]
+    components: Optional[dict[str, list[str]]] | Literal['all']
 
 
 class ScheduleResponse(BaseModel):

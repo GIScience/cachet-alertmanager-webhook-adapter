@@ -1,0 +1,10 @@
+BEGIN:VCALENDAR
+PRODID:http://www.example.com/calendarapplication/
+BEGIN:VEVENT
+UID:8906ea5d-d770-4b62-956a-5c73f4e654f1
+SUMMARY:Update
+DESCRIPTION:Some Text and then [cachet:all]
+DTSTART;TZID=Europe/Berlin:20260601T120000
+DTEND;TZID=Europe/Berlin:20260601T123000
+END:VEVENT
+END:VCALENDAR

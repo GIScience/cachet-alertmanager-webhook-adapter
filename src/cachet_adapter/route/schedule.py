@@ -1,6 +1,6 @@
 import logging
 from datetime import UTC, datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter
 from sqlmodel import Session, select
@@ -101,20 +101,29 @@ def clean_schedules(prune: bool, schedule_ids: list[int], cachet_api: CachetApi,
 
 
 def process_linked_components(
-    cachet_api: CachetApi, db_session: Session, components: dict[str, list[str]]
+    cachet_api: CachetApi,
+    db_session: Session,
+    components: Optional[dict[str, list[str]]] | Literal['all'],
+    status: ComponentStatus = ComponentStatus.MAJOR_OUTAGE,
 ) -> Optional[list[IncidentComponent]]:
+    linked_components = set()
+
     if components is None:
         return None
-
-    linked_components = set()
-    for group, components in components.items():
-        for component in components:
-            sub_linked_components, _ = get_dependent_components(
-                group=group,
-                name=component,
-                status=ComponentStatus.MAJOR_OUTAGE,
-                cachet_api=cachet_api,
-                db_session=db_session,
-            )
-            linked_components.update(sub_linked_components)
+    elif components == 'all':
+        all_components = cachet_api.list_components().data
+        for component in all_components:
+            incident_component = IncidentComponent(id=component.id, status=status)
+            linked_components.add(incident_component)
+    else:
+        for group, components in components.items():
+            for component in components:
+                sub_linked_components, _ = get_dependent_components(
+                    group=group,
+                    name=component,
+                    status=status,
+                    cachet_api=cachet_api,
+                    db_session=db_session,
+                )
+                linked_components.update(sub_linked_components)
     return list(linked_components)

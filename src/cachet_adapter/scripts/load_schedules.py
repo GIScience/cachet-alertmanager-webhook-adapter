@@ -18,7 +18,7 @@ def parse_args() -> argparse.Namespace:
         prog='Load Schedules', description='Load a ICS calendar as scheduled maintenance messages'
     )
     parser.add_argument('adapter_url')
-    parser.add_argument('--event-title', nargs='*', type=str)
+    parser.add_argument('--event-titles', nargs='*', type=str, default=[])
     parser.add_argument(
         '--prune',
         action='store_true',
@@ -28,6 +28,7 @@ def parse_args() -> argparse.Namespace:
         'calendar.'
         'The Cachet will then be in-synch with the file (except manually created schedules).',
     )
+    parser.add_argument('--link-all-components-keyword', type=str, default='[cachet:all]')
 
     exclusive_group = parser.add_mutually_exclusive_group()
     exclusive_group.add_argument('--file', dest='file', default='data/schedules.ics')
@@ -50,7 +51,11 @@ def main():
     calendar = Calendar.from_ical(data)
 
     load_schedules(
-        calendar=calendar, adapter_url=args.adapter_url, target_event_titles=args.event_title, prune=args.prune
+        calendar=calendar,
+        adapter_url=args.adapter_url,
+        target_event_titles=args.event_titles,
+        prune=args.prune,
+        all_components_keyword=args.link_all_components_keyword,
     )
 
 
@@ -58,6 +63,7 @@ def load_schedules(
     calendar: Calendar,
     adapter_url: str,
     target_event_titles: list[str],
+    all_components_keyword: str = '[cachet:all]',
     calendar_monitoring_time_range: timedelta = timedelta(weeks=4),
     prune: bool = False,
 ) -> None:
@@ -68,26 +74,32 @@ def load_schedules(
     schedules = list()
     for event in events:
         parent_event = event.as_component(keep_recurrence_attributes=True)
+
+        schedule_id = event.id.to_string()
+        schedule_name = parent_event.summary or 'Scheduled Downtime'
+        schedule_description = parent_event.description or ''
+
         if len(target_event_titles) > 0 and parent_event.summary not in target_event_titles:
             log.debug(f'Event {event.id} is skipped.')
             continue
 
         try:
-            components = json.loads(parent_event.description)
+            components = json.loads(schedule_description)
         except JSONDecodeError:
-            log.warning(
-                f'Event description '
-                f''
-                f'{parent_event.description}'
-                f''
-                f'for event {event.id.to_string()} does not contain a valid '
-                'component-set in JSON format.'
-                'Creating a scheduled downtime without linked components.'
-            )
-            components = None
+            if all_components_keyword in schedule_description:
+                components = 'all'
+            else:
+                log.warning(
+                    f'Event description '
+                    f''
+                    f'{schedule_description}'
+                    f''
+                    f'for event {event.id.to_string()} does not contain a valid '
+                    f'component-set in JSON format or the keyword to link all components: {all_components_keyword}.'
+                    'Creating a scheduled downtime without linked components.'
+                )
+                components = None
 
-        schedule_name = parent_event.summary or 'Scheduled Downtime'
-        schedule_id = event.id.to_string()
         scheduled_incident = ScheduledIncident(
             id=schedule_id,
             name=schedule_name,

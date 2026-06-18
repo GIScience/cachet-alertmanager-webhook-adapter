@@ -94,6 +94,56 @@ def test_create_schedule_with_none_component(mocked_client, responses):
     assert response.json() == {'schedule_ids': [1]}
 
 
+def test_create_schedule_with_all_component(mocked_client, responses):
+    cachet_response = {
+        'data': [
+            {'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}},
+            {'id': '2', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': None}}},
+        ],
+    }
+    responses.get(
+        'http://test-cachet/api/components',
+        json=cachet_response,
+    )
+
+    responses.get(
+        'http://test-cachet/api/schedules',
+        json={'data': []},
+    )
+
+    responses.post(
+        'http://test-cachet/api/schedules',
+        match=[
+            matchers.json_params_matcher(
+                {
+                    'name': 'Schedule one',
+                    'message': 'Updates',
+                    'scheduled_at': '2025-11-07 05:31:56',
+                    'completed_at': '3026-11-07 06:31:56',
+                    'components': [{'id': 2, 'status': 4}, {'id': 1, 'status': 4}],
+                }
+            )
+        ],
+        json={
+            'data': {'id': '1'},
+        },
+    )
+
+    schedule_request = [
+        {
+            'id': 'event-1',
+            'name': 'Schedule one',
+            'message': 'Updates',
+            'scheduled_at': '2025-11-07T05:31:56Z',
+            'completed_at': '3026-11-07T06:31:56Z',
+            'components': 'all',
+        }
+    ]
+    response = mocked_client.post('/schedule', json=schedule_request)
+    assert response.status_code == 200
+    assert response.json() == {'schedule_ids': [1]}
+
+
 def test_update_known_schedule(mocked_client, responses):
     create_default_schedule(responses, mocked_client)
 
