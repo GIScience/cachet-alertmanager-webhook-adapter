@@ -11,7 +11,7 @@ def a_component_creation_responses(responses: RequestsMock) -> tuple[Response, R
     cachet_response = {'data': []}
     responses.get('http://test-cachet/api/component-groups', json=cachet_response)
 
-    cachet_request = {'name': 'general', 'visible': True}
+    cachet_request = {'name': 'general', 'visible': True, 'collapsed': 2}
     cachet_response = {'data': {'id': '1', 'attributes': {'name': 'general'}}}
     group_create_request = responses.post(
         'http://test-cachet/api/component-groups',
@@ -96,7 +96,7 @@ def test_sync_components(mocked_api, responses):
     }
     responses.get('http://test-cachet/api/component-groups', json=cachet_response)
 
-    cachet_request = {'name': 'special', 'visible': True}
+    cachet_request = {'name': 'special', 'visible': True, 'collapsed': 2}
     cachet_response = {'data': {'id': '2', 'attributes': {'name': 'special'}}}
     responses.post(
         'http://test-cachet/api/component-groups',
@@ -193,7 +193,7 @@ def test_sync_components_group_change(mocked_api, responses):
     }
     responses.get('http://test-cachet/api/component-groups', json=cachet_response)
 
-    cachet_request = {'name': 'special', 'visible': True}
+    cachet_request = {'name': 'special', 'visible': True, 'collapsed': 2}
     cachet_response = {'data': {'id': '2', 'attributes': {'name': 'special'}}}
     responses.post(
         'http://test-cachet/api/component-groups',

@@ -24,6 +24,12 @@ class IncidentStatus(IntEnum):
     FIXED = 4
 
 
+class CollapseStates(IntEnum):
+    ALWAYS_EXPANDED = 0
+    ALWAYS_COLLAPSED = 1
+    COLLAPSED_UNLESS_INCIDENT = 2
+
+
 class CachetIdObject(BaseModel):
     id: CachetId
 
@@ -86,6 +92,7 @@ class CachetComponentResponseData(BaseModel):
 class CachetGroupAttributes(BaseModel):
     name: str
     visible: bool = True
+    collapsed: int = CollapseStates.COLLAPSED_UNLESS_INCIDENT
 
 
 class CachetGroup(BaseModel):
