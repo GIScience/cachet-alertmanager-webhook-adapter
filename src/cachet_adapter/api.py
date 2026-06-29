@@ -33,15 +33,10 @@ async def configure_dependencies(the_app: FastAPI):
 
 
 app = FastAPI(
-    title='HeiGIT Status Adapter',
-    summary='Prometheus to Cachet adaption service',
-    description='A mere wrapper that takes Prometheus Alertmanager post requests and translates them to Cachet incidents.',
+    title='Cachet Alertmanager Webhook Adapter',
+    summary='Prometheus to Cachet Adaptation Service',
+    description='A webhook adapter that translates [Prometheus Alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/) alerts into [Cachet](https://cachethq.io/) status page incidents, and updates components.',
     version='0.0.1',
-    contact={
-        'name': 'HeiGIT',
-        'url': 'https://heigit.org',
-        'email': 'info@heigit.org',
-    },
     lifespan=configure_dependencies,
     docs_url='/docs',
     redoc_url='/redoc',
