@@ -59,4 +59,18 @@ services:
       adapter:
         condition: service_healthy
     profiles:
-      - migration
+      - cron
+
+  sync-alerts:
+    build:
+      context: .
+    entrypoint:
+      - uv
+      - run
+      - sync-alerts
+      - http://adapter:8002
+    depends_on:
+      adapter:
+        condition: service_healthy
+    profiles:
+      - cron
