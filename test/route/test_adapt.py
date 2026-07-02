@@ -1,10 +1,12 @@
+import requests
+import responses as responses_lib
 from responses import matchers
 from sqlmodel import Session
 
 from cachet_adapter.models.database import ComponentGraph, ComponentRelationship
 
 
-def test_adapt_creates_incident(mocked_client, responses):
+def create_default_incident(responses, mocked_client) -> tuple[requests.Response, responses_lib.Response]:
     responses.get(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
@@ -26,8 +28,8 @@ def test_adapt_creates_incident(mocked_client, responses):
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
-    cachet_response = {'data': {'id': '30'}}
-    responses.post(
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
+    post = responses.post(
         'http://test-cachet/api/incidents',
         match=[
             matchers.json_params_matcher(cachet_request, strict_match=False),
@@ -50,8 +52,13 @@ def test_adapt_creates_incident(mocked_client, responses):
             }
         ]
     }
-
     response = mocked_client.post('/adapt', json=alertmanager_request)
+
+    return response, post
+
+
+def test_adapt_creates_incident(mocked_client, responses):
+    response, _ = create_default_incident(responses=responses, mocked_client=mocked_client)
 
     assert response.status_code == 200
     assert response.json() == {'incident_ids': [30]}
@@ -79,7 +86,7 @@ def test_adapt_request_without_annotations(mocked_client, responses):
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[
@@ -127,7 +134,7 @@ def test_adapt_creates_incident_matching_component_name(mocked_client, responses
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 1, 'status': 4}],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -179,7 +186,7 @@ def test_adapt_creates_incident_matching_group(mocked_client, responses):
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 2, 'status': 4}],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -231,7 +238,7 @@ def test_adapt_creates_incident_matching_org(mocked_client, responses):
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 2, 'status': 4}],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -282,7 +289,7 @@ def test_adapt_custom_tag_overwrites_job_name(mocked_client, responses):
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 2, 'status': 4}],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -337,7 +344,7 @@ def test_adapt_links_incidents_to_dependent_components(mocked_client, responses,
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 2, 'status': 4}, {'id': 1, 'status': 4}],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -406,7 +413,7 @@ def test_adapt_links_incidents_to_dependent_components_respects_group(database, 
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 5, 'status': 4}, {'id': 1, 'status': 4}],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -469,7 +476,7 @@ def test_adapt_dependent_component_respect_relationship(mocked_client, responses
             {'id': 1, 'status': 4},
         ],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -521,7 +528,7 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component(
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 1, 'status': 4}],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -573,7 +580,7 @@ def test_adapt_links_incidents_to_dependent_components_dependent_no_compnent(
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 2, 'status': 4}],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -628,7 +635,7 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component_in_grou
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 1, 'status': 4}],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -673,7 +680,7 @@ def test_adapt_does_create_incident_without_linked_components_if_forced(mocked_c
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -745,7 +752,7 @@ def test_adapt_respects_severity(mocked_client, responses):
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 1, 'status': 3}],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -797,7 +804,7 @@ def test_adapt_respects_severity_for_dependencies(mocked_client, responses, load
         'occurred_at': '2025-11-20T15:54:41.898000Z',
         'components': [{'id': 2, 'status': 3}, {'id': 1, 'status': 3}],
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request, strict_match=False)],
@@ -826,54 +833,40 @@ def test_adapt_respects_severity_for_dependencies(mocked_client, responses, load
 
 
 def test_adapt_updates_existing_incident_on_same_fingerprint(mocked_client, responses):
-    responses.get(
-        'http://test-cachet/api/components',
-        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
-        json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
-        },
-    )
+    response, post = create_default_incident(responses=responses, mocked_client=mocked_client)
 
-    cachet_header = {
-        'Authorization': 'Bearer my-token',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    }
-    post = responses.post(
-        'http://test-cachet/api/incidents',
-        json={'data': {'id': '30'}},
+    responses.get(
+        'http://test-cachet/api/incidents/30',
+        json={'data': {'id': '30', 'attributes': {'status': {'value': 0}}}},
     )
     responses.put(
         'http://test-cachet/api/incidents/30',
         match=[
-            matchers.header_matcher(cachet_header),
-            matchers.json_params_matcher(
+            matchers.header_matcher(
                 {
-                    'status': 0,
-                    'occurred_at': '2025-11-20T15:54:41.898000Z',
+                    'Authorization': 'Bearer my-token',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                 }
             ),
+            matchers.json_params_matcher({'status': 4}),
         ],
-        json={'data': {'id': '30'}},
+        json={'data': {'id': '30', 'attributes': {'status': {'value': 4}}}},
     )
 
     alert = {
-        'status': 'firing',
+        'status': 'resolved',
         'labels': {
             'job': 'a',
         },
         'annotations': {
-            'description': 'Service is down.',
-            'title': 'Instance down',
+            'description': 'Component a is down.',
+            'title': 'Component a down',
         },
         'startsAt': '2025-11-20T15:54:41.898Z',
-        'fingerprint': 'same-fingerprint',
+        'fingerprint': 'fingerprint',
     }
     alertmanager_request = {'alerts': [alert]}
-
-    response = mocked_client.post('/adapt', json=alertmanager_request)
-    assert response.status_code == 200
-    assert response.json() == {'incident_ids': [30]}
 
     response = mocked_client.post('/adapt', json=alertmanager_request)
     assert response.status_code == 200
@@ -882,61 +875,33 @@ def test_adapt_updates_existing_incident_on_same_fingerprint(mocked_client, resp
     assert post.call_count == 1
 
 
-def test_adapt_marks_incident_fixed_on_resolved_alert(mocked_client, responses):
+def test_adapt_dont_downgrade_higher_status(mocked_client, responses):
+    response, post = create_default_incident(responses=responses, mocked_client=mocked_client)
+
     responses.get(
-        'http://test-cachet/api/components',
-        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
-        json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
-        },
-    )
-
-    responses.post(
-        'http://test-cachet/api/incidents',
-        json={'data': {'id': '30'}},
-    )
-    responses.put(
         'http://test-cachet/api/incidents/30',
-        match=[
-            matchers.json_params_matcher(
-                {
-                    'status': 4,
-                    'occurred_at': '2025-11-20T15:54:41.898000Z',
-                }
-            ),
-        ],
-        json={'data': {'id': '30'}},
+        json={'data': {'id': '30', 'attributes': {'status': {'value': 2}}}},
     )
 
-    firing_alert = {
+    alert = {
         'status': 'firing',
-        'labels': {'job': 'a'},
+        'labels': {
+            'job': 'a',
+        },
         'annotations': {
-            'description': 'Service is down.',
-            'title': 'Instance down',
+            'description': 'Component a is down.',
+            'title': 'Component a down',
         },
         'startsAt': '2025-11-20T15:54:41.898Z',
-        'fingerprint': 'alert-fingerprint',
+        'fingerprint': 'fingerprint',
     }
+    alertmanager_request = {'alerts': [alert]}
 
-    response = mocked_client.post('/adapt', json={'alerts': [firing_alert]})
+    response = mocked_client.post('/adapt', json=alertmanager_request)
     assert response.status_code == 200
     assert response.json() == {'incident_ids': [30]}
 
-    resolved_alert = {
-        'status': 'resolved',
-        'labels': {'job': 'a'},
-        'annotations': {
-            'description': 'Service is down.',
-            'title': 'Instance down',
-        },
-        'startsAt': '2025-11-20T15:54:41.898Z',
-        'fingerprint': 'alert-fingerprint',
-    }
-
-    response = mocked_client.post('/adapt', json={'alerts': [resolved_alert]})
-    assert response.status_code == 200
-    assert response.json() == {'incident_ids': [30]}
+    assert post.call_count == 1
 
 
 def test_adapt_creates_new_incident_if_previous_fixed(mocked_client, responses):
@@ -944,30 +909,15 @@ def test_adapt_creates_new_incident_if_previous_fixed(mocked_client, responses):
     The Alertmanager fingerprint is not unique, it is only a hash of the labels.
     Yet the same alert should create two incidents if it was resolved in between, see #20.
     """
+    # Preparation
+    ## Create first incident
+    _, post_a = create_default_incident(responses=responses, mocked_client=mocked_client)
+
+    ## Resolve incident
     responses.get(
-        'http://test-cachet/api/components',
-        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
-        json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
-        },
+        'http://test-cachet/api/incidents/30',
+        json={'data': {'id': '30', 'attributes': {'status': {'value': 0}}}},
     )
-
-    # Create first incident
-    cachet_request = {
-        'name': 'Instance down',
-        'status': 0,
-        'message': 'Service is down.',
-        'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
-        'components': [{'id': 1, 'status': 4}],
-    }
-    post_a = responses.post(
-        'http://test-cachet/api/incidents',
-        match=[matchers.json_params_matcher(cachet_request)],
-        json={'data': {'id': '30'}},
-    )
-
-    # Resolve incident
     cachet_header = {
         'Authorization': 'Bearer my-token',
         'Content-Type': 'application/json',
@@ -977,21 +927,33 @@ def test_adapt_creates_new_incident_if_previous_fixed(mocked_client, responses):
         'http://test-cachet/api/incidents/30',
         match=[
             matchers.header_matcher(cachet_header),
-            matchers.json_params_matcher(
-                {
-                    'status': 4,
-                    'occurred_at': '2025-11-20T15:54:41.898000Z',
-                }
-            ),
+            matchers.json_params_matcher({'status': 4}),
         ],
-        json={'data': {'id': '30'}},
+        json={'data': {'id': '30', 'attributes': {'status': {'value': 4}}}},
     )
+    alert = {
+        'status': 'resolved',
+        'labels': {
+            'job': 'a',
+        },
+        'annotations': {
+            'description': 'Component a is down.',
+            'title': 'Component a down',
+        },
+        'startsAt': '2025-11-20T15:54:41.898Z',
+        'fingerprint': 'fingerprint',
+    }
+    alertmanager_request = {'alerts': [alert]}
+    response = mocked_client.post('/adapt', json=alertmanager_request)
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
 
-    # Create new incident although the fingerprint is the same
+    # Test
+    ## Create new incident although the fingerprint is the same
     cachet_request = {
-        'name': 'Instance down',
+        'name': 'Component a down',
         'status': 0,
-        'message': 'Service is down.',
+        'message': 'Component a is down.',
         'visible': True,
         'occurred_at': '2025-11-21T15:54:41.898000Z',
         'components': [{'id': 1, 'status': 4}],
@@ -999,57 +961,20 @@ def test_adapt_creates_new_incident_if_previous_fixed(mocked_client, responses):
     post_b = responses.post(
         'http://test-cachet/api/incidents',
         match=[matchers.json_params_matcher(cachet_request)],
-        json={'data': {'id': '31'}},
+        json={'data': {'id': '31', 'attributes': {'status': {'value': 0}}}},
     )
 
-    # Create first incident
     alert = {
         'status': 'firing',
         'labels': {
             'job': 'a',
         },
         'annotations': {
-            'description': 'Service is down.',
-            'title': 'Instance down',
-        },
-        'startsAt': '2025-11-20T15:54:41.898Z',
-        'fingerprint': 'same-fingerprint',
-    }
-    alertmanager_request = {'alerts': [alert]}
-    response = mocked_client.post('/adapt', json=alertmanager_request)
-    assert response.status_code == 200
-    assert response.json() == {'incident_ids': [30]}
-
-    # Resolve incident
-    alert = {
-        'status': 'resolved',
-        'labels': {
-            'job': 'a',
-        },
-        'annotations': {
-            'description': 'Service is down.',
-            'title': 'Instance down',
-        },
-        'startsAt': '2025-11-20T15:54:41.898Z',
-        'fingerprint': 'same-fingerprint',
-    }
-    alertmanager_request = {'alerts': [alert]}
-    response = mocked_client.post('/adapt', json=alertmanager_request)
-    assert response.status_code == 200
-    assert response.json() == {'incident_ids': [30]}
-
-    # Create new incident, although fingerprint is the same
-    alert = {
-        'status': 'firing',
-        'labels': {
-            'job': 'a',
-        },
-        'annotations': {
-            'description': 'Service is down.',
-            'title': 'Instance down',
+            'description': 'Component a is down.',
+            'title': 'Component a down',
         },
         'startsAt': '2025-11-21T15:54:41.898Z',
-        'fingerprint': 'same-fingerprint',
+        'fingerprint': 'fingerprint',
     }
     alertmanager_request = {'alerts': [alert]}
     response = mocked_client.post('/adapt', json=alertmanager_request)
@@ -1090,7 +1015,7 @@ def test_adapt_marks_required_dependents_as_major_outage(mocked_client, load_com
                 }
             ),
         ],
-        json={'data': {'id': '30'}},
+        json={'data': {'id': '30', 'attributes': {'status': {'value': 0}}}},
     )
 
     alert = {
@@ -1150,7 +1075,7 @@ def test_adapt_marks_optional_dependents_as_partial_outage(mocked_client, load_c
                 }
             ),
         ],
-        json={'data': {'id': '30'}},
+        json={'data': {'id': '30', 'attributes': {'status': {'value': 0}}}},
     )
 
     alert = {
@@ -1191,7 +1116,7 @@ def test_adapt_pulled_incident_unknown_active(mocked_client, responses):
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[
@@ -1241,7 +1166,7 @@ def test_adapt_pulled_incident_unknown_suppressed(mocked_client, responses):
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
-    cachet_response = {'data': {'id': '30'}}
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 1}}}}
     responses.post(
         'http://test-cachet/api/incidents',
         match=[
@@ -1275,43 +1200,19 @@ def test_adapt_pulled_incident_unknown_suppressed(mocked_client, responses):
 
 def test_adapt_pulled_incident_known_suppressed(mocked_client, responses):
     # Preparation: register an incident
-    responses.get(
-        'http://test-cachet/api/components',
-        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
-        json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
-        },
-    )
-    responses.post(
-        'http://test-cachet/api/incidents',
-        json={'data': {'id': '30'}},
-    )
-    firing_alert = {
-        'status': 'firing',
-        'labels': {'job': 'a'},
-        'annotations': {
-            'description': 'Component a is down.',
-            'title': 'Component a down',
-        },
-        'startsAt': '2025-11-20T15:54:41.898Z',
-        'fingerprint': 'alert-fingerprint',
-    }
-    response = mocked_client.post('/adapt', json={'alerts': [firing_alert]})
-    assert response.status_code == 200
-    assert response.json() == {'incident_ids': [30]}
+    _, _ = create_default_incident(responses=responses, mocked_client=mocked_client)
 
     # Now the actual test: update it as it is now suppressed
+    responses.get(
+        'http://test-cachet/api/incidents/30',
+        json={'data': {'id': '30', 'attributes': {'status': {'value': 0}}}},
+    )
     responses.put(
         'http://test-cachet/api/incidents/30',
         match=[
-            matchers.json_params_matcher(
-                {
-                    'status': 1,
-                    'occurred_at': '2025-11-20T15:54:41.898000Z',
-                }
-            ),
+            matchers.json_params_matcher({'status': 1}),
         ],
-        json={'data': {'id': '30'}},
+        json={'data': {'id': '30', 'attributes': {'status': {'value': 1}}}},
     )
 
     alertmanager_request = [
@@ -1320,7 +1221,7 @@ def test_adapt_pulled_incident_known_suppressed(mocked_client, responses):
                 'description': 'Component a is down.',
                 'title': 'Component a down',
             },
-            'fingerprint': 'alert-fingerprint',
+            'fingerprint': 'fingerprint',
             'startsAt': '2025-11-20T15:54:41.898Z',
             'status': {
                 'inhibitedBy': [],
@@ -1338,30 +1239,7 @@ def test_adapt_pulled_incident_known_suppressed(mocked_client, responses):
 
 def test_adapt_prune_known_incident_resolved_while_suppressed(mocked_client, responses):
     # Preparation: register an incident
-    responses.get(
-        'http://test-cachet/api/components',
-        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
-        json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
-        },
-    )
-    responses.post(
-        'http://test-cachet/api/incidents',
-        json={'data': {'id': '30'}},
-    )
-    firing_alert = {
-        'status': 'firing',
-        'labels': {'job': 'a'},
-        'annotations': {
-            'description': 'Component a is down.',
-            'title': 'Component a down',
-        },
-        'startsAt': '2025-11-20T15:54:41.898Z',
-        'fingerprint': 'alert-fingerprint',
-    }
-    response = mocked_client.post('/adapt', json={'alerts': [firing_alert]})
-    assert response.status_code == 200
-    assert response.json() == {'incident_ids': [30]}
+    _, _ = create_default_incident(responses=responses, mocked_client=mocked_client)
 
     # Now the actual test: update it as fixed as it is no longer present in the Alertmanager API
     responses.put(
@@ -1369,7 +1247,7 @@ def test_adapt_prune_known_incident_resolved_while_suppressed(mocked_client, res
         match=[
             matchers.json_params_matcher({'status': 4}),
         ],
-        json={'data': {'id': '30'}},
+        json={'data': {'id': '30', 'attributes': {'status': {'value': 4}}}},
     )
 
     alertmanager_request = []

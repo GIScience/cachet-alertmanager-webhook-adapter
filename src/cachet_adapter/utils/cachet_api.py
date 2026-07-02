@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Optional
 
 from cachet_adapter.models.cachet import (
     BaseComponent,
@@ -12,6 +12,9 @@ from cachet_adapter.models.cachet import (
     CachetIncidentResponse,
     CachetRelationshipComponent,
     CachetSchedule,
+    CachetScheduleResponse,
+    Incident,
+    IncidentStatus,
 )
 from cachet_adapter.models.database import NONE_GROUP_STR
 from cachet_adapter.utils.http_connection import HttpConnection
@@ -82,7 +85,15 @@ class CachetApi(HttpConnection):
     def delete_component(self, component_id: int) -> None:
         self.session.delete(f'{self.base_url}/components/{component_id}')
 
-    def create_incident(self, incident_json: dict[str, Any]) -> int:
+    def get_incident(self, incident_id: int) -> CachetIncidentResponse:
+        response = self.session.get(f'{self.base_url}/incidents/{incident_id}')
+        response.raise_for_status()
+        response_json = response.json()
+        cachet_response = CachetIncidentResponse.model_validate(response_json)
+        return cachet_response
+
+    def create_incident(self, incident: Incident) -> int:
+        incident_json = incident.model_dump(exclude_none=True, mode='json')
         response = self.session.post(f'{self.base_url}/incidents', json=incident_json)
         response.raise_for_status()
         response_json = response.json()
@@ -90,8 +101,8 @@ class CachetApi(HttpConnection):
         incident_id = cachet_response.data.id
         return incident_id
 
-    def update_incident(self, incident_id: int, incident_json: dict[str, Any]) -> None:
-        response = self.session.put(f'{self.base_url}/incidents/{incident_id}', json=incident_json)
+    def update_incident(self, incident_id: int, new_status: IncidentStatus) -> None:
+        response = self.session.put(f'{self.base_url}/incidents/{incident_id}', json={'status': new_status})
         response.raise_for_status()
 
     def list_schedule_ids(self) -> set[int]:
@@ -108,7 +119,7 @@ class CachetApi(HttpConnection):
         )
         response.raise_for_status()
         response_json = response.json()
-        cachet_response = CachetIncidentResponse.model_validate(response_json)
+        cachet_response = CachetScheduleResponse.model_validate(response_json)
         schedule_id = cachet_response.data.id
         return schedule_id
 

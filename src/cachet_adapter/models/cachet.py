@@ -62,7 +62,23 @@ class Incident(BaseModel):
     components: Optional[list[IncidentComponent]] = None
 
 
+class CachetStatusValue(BaseModel):
+    value: IncidentStatus
+
+
+class CachetIncidentAttributes(BaseModel):
+    status: CachetStatusValue
+
+
+class CachetIncidentData(CachetIdObject):
+    attributes: CachetIncidentAttributes
+
+
 class CachetIncidentResponse(BaseModel):
+    data: CachetIncidentData
+
+
+class CachetScheduleResponse(BaseModel):
     data: CachetIdObject
 
 
