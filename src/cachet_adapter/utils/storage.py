@@ -1,8 +1,9 @@
+from datetime import datetime
 from typing import Optional, Sequence
 
 from fastapi import HTTPException
 from sqlalchemy import delete
-from sqlmodel import Session, not_, select
+from sqlmodel import Session, and_, not_, select
 
 from cachet_adapter.models.api import ComponentGraphResponse, FlatComponentGraph, NestedComponentGraph
 from cachet_adapter.models.cachet import ComponentStatus, IncidentComponent
@@ -152,9 +153,10 @@ def unique_dependent_components(
     return dependent_component_dict
 
 
-def save_incident_id(db_session: Session, fingerprint: str, incident_id: int) -> None:
+def save_incident_id(db_session: Session, starts_at: datetime, fingerprint: str, incident_id: int) -> None:
     db_session.add(
         IncidentResolver(
+            starts_at=starts_at,
             alertmanager_fingerprint=fingerprint,
             cachet_id=incident_id,
         )
@@ -172,8 +174,10 @@ def save_schedule_id(db_session: Session, schedule_id: int, event_uid: str):
     db_session.commit()
 
 
-def get_incident_id(db_session: Session, fingerprint: str) -> Optional[int]:
-    cachet_id_stmt = select(IncidentResolver.cachet_id).where(IncidentResolver.alertmanager_fingerprint == fingerprint)
+def get_incident_id(db_session: Session, starts_at: datetime, fingerprint: str) -> Optional[int]:
+    cachet_id_stmt = select(IncidentResolver.cachet_id).where(
+        and_(IncidentResolver.starts_at == starts_at, IncidentResolver.alertmanager_fingerprint == fingerprint)
+    )
     incident_id = db_session.scalar(cachet_id_stmt)
     return incident_id
 

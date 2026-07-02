@@ -107,7 +107,7 @@ def process_alert(
             components=list(linked_components),
         )
 
-        incident_id = get_incident_id(db_session=db_session, fingerprint=alert.fingerprint)
+        incident_id = get_incident_id(db_session=db_session, starts_at=alert.startsAt, fingerprint=alert.fingerprint)
 
         if incident_id:
             incident_json = incident.model_dump(exclude_none=True, mode='json', include={'status', 'occurred_at'})
@@ -117,7 +117,9 @@ def process_alert(
         else:
             incident_json = incident.model_dump(exclude_none=True, mode='json')
             incident_id = cachet_api.create_incident(incident_json=incident_json)
-            save_incident_id(db_session=db_session, fingerprint=alert.fingerprint, incident_id=incident_id)
+            save_incident_id(
+                db_session=db_session, starts_at=alert.startsAt, fingerprint=alert.fingerprint, incident_id=incident_id
+            )
 
         return incident_id
     else:

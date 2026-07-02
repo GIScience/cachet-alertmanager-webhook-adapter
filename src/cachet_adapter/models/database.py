@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import StrEnum
 
 from sqlmodel import Field, SQLModel
@@ -22,8 +23,9 @@ class ComponentGraph(SQLModel, table=True):
 
 
 class IncidentResolver(SQLModel, table=True):
-    alertmanager_fingerprint: str = Field(primary_key=True, index=True, unique=True)
-    cachet_id: int = Field(primary_key=True, index=True, unique=True)
+    starts_at: datetime = Field(primary_key=True, index=True)
+    alertmanager_fingerprint: str = Field(primary_key=True)
+    cachet_id: int = Field(unique=True)
 
 
 class ScheduleResolver(SQLModel, table=True):

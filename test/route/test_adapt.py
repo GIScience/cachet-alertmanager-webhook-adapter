@@ -939,6 +939,127 @@ def test_adapt_marks_incident_fixed_on_resolved_alert(mocked_client, responses):
     assert response.json() == {'incident_ids': [30]}
 
 
+def test_adapt_creates_new_incident_if_previous_fixed(mocked_client, responses):
+    """
+    The Alertmanager fingerprint is not unique, it is only a hash of the labels.
+    Yet the same alert should create two incidents if it was resolved in between, see #20.
+    """
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+
+    # Create first incident
+    cachet_request = {
+        'name': 'Instance down',
+        'status': 0,
+        'message': 'Service is down.',
+        'visible': True,
+        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'components': [{'id': 1, 'status': 4}],
+    }
+    post_a = responses.post(
+        'http://test-cachet/api/incidents',
+        match=[matchers.json_params_matcher(cachet_request)],
+        json={'data': {'id': '30'}},
+    )
+
+    # Resolve incident
+    cachet_header = {
+        'Authorization': 'Bearer my-token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+    responses.put(
+        'http://test-cachet/api/incidents/30',
+        match=[
+            matchers.header_matcher(cachet_header),
+            matchers.json_params_matcher(
+                {
+                    'status': 4,
+                    'occurred_at': '2025-11-20T15:54:41.898000Z',
+                }
+            ),
+        ],
+        json={'data': {'id': '30'}},
+    )
+
+    # Create new incident although the fingerprint is the same
+    cachet_request = {
+        'name': 'Instance down',
+        'status': 0,
+        'message': 'Service is down.',
+        'visible': True,
+        'occurred_at': '2025-11-21T15:54:41.898000Z',
+        'components': [{'id': 1, 'status': 4}],
+    }
+    post_b = responses.post(
+        'http://test-cachet/api/incidents',
+        match=[matchers.json_params_matcher(cachet_request)],
+        json={'data': {'id': '31'}},
+    )
+
+    # Create first incident
+    alert = {
+        'status': 'firing',
+        'labels': {
+            'job': 'a',
+        },
+        'annotations': {
+            'description': 'Service is down.',
+            'title': 'Instance down',
+        },
+        'startsAt': '2025-11-20T15:54:41.898Z',
+        'fingerprint': 'same-fingerprint',
+    }
+    alertmanager_request = {'alerts': [alert]}
+    response = mocked_client.post('/adapt', json=alertmanager_request)
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+    # Resolve incident
+    alert = {
+        'status': 'resolved',
+        'labels': {
+            'job': 'a',
+        },
+        'annotations': {
+            'description': 'Service is down.',
+            'title': 'Instance down',
+        },
+        'startsAt': '2025-11-20T15:54:41.898Z',
+        'fingerprint': 'same-fingerprint',
+    }
+    alertmanager_request = {'alerts': [alert]}
+    response = mocked_client.post('/adapt', json=alertmanager_request)
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+    # Create new incident, although fingerprint is the same
+    alert = {
+        'status': 'firing',
+        'labels': {
+            'job': 'a',
+        },
+        'annotations': {
+            'description': 'Service is down.',
+            'title': 'Instance down',
+        },
+        'startsAt': '2025-11-21T15:54:41.898Z',
+        'fingerprint': 'same-fingerprint',
+    }
+    alertmanager_request = {'alerts': [alert]}
+    response = mocked_client.post('/adapt', json=alertmanager_request)
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [31]}
+
+    assert post_a.call_count == 1
+    assert post_b.call_count == 1
+
+
 def test_adapt_marks_required_dependents_as_major_outage(mocked_client, load_component_chain, responses):
     responses.get(
         'http://test-cachet/api/components',
