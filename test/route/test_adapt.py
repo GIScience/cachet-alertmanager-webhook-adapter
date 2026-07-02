@@ -1046,3 +1046,213 @@ def test_adapt_marks_optional_dependents_as_partial_outage(mocked_client, load_c
     response = mocked_client.post('/adapt', json={'alerts': [alert]})
     assert response.status_code == 200
     assert response.json() == {'incident_ids': [30]}
+
+
+def test_adapt_pulled_incident_unknown_active(mocked_client, responses):
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+
+    cachet_request = {
+        'name': 'Component a down',
+        'status': 0,
+        'message': 'Component a is down.',
+        'visible': True,
+        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'components': [{'id': 1, 'status': 4}],
+    }
+    cachet_header = {
+        'Authorization': 'Bearer my-token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+    cachet_response = {'data': {'id': '30'}}
+    responses.post(
+        'http://test-cachet/api/incidents',
+        match=[
+            matchers.json_params_matcher(cachet_request, strict_match=False),
+            matchers.header_matcher(cachet_header),
+        ],
+        json=cachet_response,
+    )
+
+    alertmanager_request = [
+        {
+            'annotations': {
+                'description': 'Component a is down.',
+                'title': 'Component a down',
+            },
+            'fingerprint': 'alert-fingerprint',
+            'startsAt': '2025-11-20T15:54:41.898Z',
+            'status': {'inhibitedBy': [], 'silencedBy': [], 'state': 'active'},
+            'labels': {'job': 'a'},
+        },
+    ]
+    response = mocked_client.post('/adapt', json=alertmanager_request, params={'prune': True})
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+
+def test_adapt_pulled_incident_unknown_suppressed(mocked_client, responses):
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+
+    cachet_request = {
+        'name': 'Component a down',
+        'status': 1,
+        'message': 'Component a is down.',
+        'visible': True,
+        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'components': [{'id': 1, 'status': 4}],
+    }
+    cachet_header = {
+        'Authorization': 'Bearer my-token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+    cachet_response = {'data': {'id': '30'}}
+    responses.post(
+        'http://test-cachet/api/incidents',
+        match=[
+            matchers.json_params_matcher(cachet_request, strict_match=False),
+            matchers.header_matcher(cachet_header),
+        ],
+        json=cachet_response,
+    )
+
+    alertmanager_request = [
+        {
+            'annotations': {
+                'description': 'Component a is down.',
+                'title': 'Component a down',
+            },
+            'fingerprint': 'alert-fingerprint',
+            'startsAt': '2025-11-20T15:54:41.898Z',
+            'status': {
+                'inhibitedBy': [],
+                'silencedBy': ['b986455c-9ba9-4059-9e6b-e3bce51105fc'],
+                'state': 'suppressed',
+            },
+            'labels': {'job': 'a'},
+        },
+    ]
+    response = mocked_client.post('/adapt', json=alertmanager_request, params={'prune': True})
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+
+def test_adapt_pulled_incident_known_suppressed(mocked_client, responses):
+    # Preparation: register an incident
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+    responses.post(
+        'http://test-cachet/api/incidents',
+        json={'data': {'id': '30'}},
+    )
+    firing_alert = {
+        'status': 'firing',
+        'labels': {'job': 'a'},
+        'annotations': {
+            'description': 'Component a is down.',
+            'title': 'Component a down',
+        },
+        'startsAt': '2025-11-20T15:54:41.898Z',
+        'fingerprint': 'alert-fingerprint',
+    }
+    response = mocked_client.post('/adapt', json={'alerts': [firing_alert]})
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+    # Now the actual test: update it as it is now suppressed
+    responses.put(
+        'http://test-cachet/api/incidents/30',
+        match=[
+            matchers.json_params_matcher(
+                {
+                    'status': 1,
+                    'occurred_at': '2025-11-20T15:54:41.898000Z',
+                }
+            ),
+        ],
+        json={'data': {'id': '30'}},
+    )
+
+    alertmanager_request = [
+        {
+            'annotations': {
+                'description': 'Component a is down.',
+                'title': 'Component a down',
+            },
+            'fingerprint': 'alert-fingerprint',
+            'startsAt': '2025-11-20T15:54:41.898Z',
+            'status': {
+                'inhibitedBy': [],
+                'silencedBy': ['b986455c-9ba9-4059-9e6b-e3bce51105fc'],
+                'state': 'suppressed',
+            },
+            'labels': {'job': 'a'},
+        },
+    ]
+    response = mocked_client.post('/adapt', json=alertmanager_request, params={'prune': True})
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+
+def test_adapt_prune_known_incident_resolved_while_suppressed(mocked_client, responses):
+    # Preparation: register an incident
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+    responses.post(
+        'http://test-cachet/api/incidents',
+        json={'data': {'id': '30'}},
+    )
+    firing_alert = {
+        'status': 'firing',
+        'labels': {'job': 'a'},
+        'annotations': {
+            'description': 'Component a is down.',
+            'title': 'Component a down',
+        },
+        'startsAt': '2025-11-20T15:54:41.898Z',
+        'fingerprint': 'alert-fingerprint',
+    }
+    response = mocked_client.post('/adapt', json={'alerts': [firing_alert]})
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+    # Now the actual test: update it as fixed as it is no longer present in the Alertmanager API
+    responses.put(
+        'http://test-cachet/api/incidents/30',
+        match=[
+            matchers.json_params_matcher({'status': 4}),
+        ],
+        json={'data': {'id': '30'}},
+    )
+
+    alertmanager_request = []
+    response = mocked_client.post('/adapt', json=alertmanager_request, params={'prune': True})
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}

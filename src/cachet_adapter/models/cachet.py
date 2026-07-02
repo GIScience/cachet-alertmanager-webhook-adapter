@@ -21,6 +21,9 @@ class ComponentStatus(IntEnum):
 
 class IncidentStatus(IntEnum):
     REPORTED = 0
+    INVESTIGATING = 1
+    IDENTIFIED = 2
+    WATCHING = 3
     FIXED = 4
 
 

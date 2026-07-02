@@ -5,7 +5,7 @@ import logging
 from cachet_adapter.models.cachet import CachetGroupAttributes
 from cachet_adapter.models.scripts import ComponentData
 from cachet_adapter.settings import AdapterSettings
-from cachet_adapter.utils.cachetapi import CachetApi
+from cachet_adapter.utils.cachet_api import CachetApi
 
 log = logging.getLogger(__name__)
 

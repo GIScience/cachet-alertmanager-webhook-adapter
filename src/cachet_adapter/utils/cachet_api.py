@@ -1,11 +1,6 @@
 import logging
 from typing import Any, Optional
 
-import requests
-from pydantic import HttpUrl
-from requests.adapters import HTTPAdapter
-from urllib3 import Retry
-
 from cachet_adapter.models.cachet import (
     BaseComponent,
     CachetComponentCreateResponse,
@@ -19,37 +14,12 @@ from cachet_adapter.models.cachet import (
     CachetSchedule,
 )
 from cachet_adapter.models.database import NONE_GROUP_STR
+from cachet_adapter.utils.http_connection import HttpConnection
 
 log = logging.getLogger(__name__)
 
 
-class CachetApi:
-    def __init__(
-        self,
-        base_url: HttpUrl,
-        token: str,
-        max_retries: int = 5,
-    ):
-        self.base_url = base_url
-        self.session = requests.Session()
-
-        self.configure_session(max_retries=max_retries, token=token)
-
-    def configure_session(self, max_retries: int, token: str):
-        self.session.headers.update(
-            {
-                'Authorization': f'Bearer {token}',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            }
-        )
-
-        retries = Retry(total=max_retries, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
-        # We have to mount http:// to overwrite the default adapters
-        # noinspection HttpUrlsUsage
-        self.session.mount('http://', HTTPAdapter(max_retries=retries))
-        self.session.mount('https://', HTTPAdapter(max_retries=retries))
-
+class CachetApi(HttpConnection):
     def list_groups(self) -> list[CachetGroup]:
         response = self.session.get(f'{self.base_url}/component-groups')
         response.raise_for_status()

@@ -6,10 +6,13 @@ from sqlmodel import Session
 from starlette.requests import Request
 
 from cachet_adapter.models.alertmanager import (
-    Alert,
+    AlertmanagerApiStatus,
     AlertmanagerSeverity,
-    AlertmanagerStatus,
-    AlertmanagerWebhook,
+    AlertmanagerStatusObject,
+    AlertmanagerWebhookContent,
+    AlertmanagerWebhookStatus,
+    ApiAlert,
+    WebhookAlert,
 )
 from cachet_adapter.models.api import AdaptResponse
 from cachet_adapter.models.cachet import (
@@ -18,8 +21,14 @@ from cachet_adapter.models.cachet import (
     IncidentStatus,
 )
 from cachet_adapter.models.database import NONE_GROUP_STR
-from cachet_adapter.utils.cachetapi import CachetApi
-from cachet_adapter.utils.storage import get_dependent_components, get_incident_id, save_incident_id
+from cachet_adapter.utils.cachet_api import CachetApi
+from cachet_adapter.utils.storage import (
+    delete_incident,
+    get_additional_known_incidents,
+    get_dependent_components,
+    get_incident_id,
+    save_incident_id,
+)
 
 log = logging.getLogger(__name__)
 
@@ -30,23 +39,40 @@ router = APIRouter(prefix=ADAPT_ROUTE)
 @router.post(
     path='',
     status_code=200,
-    summary='Translate an Alertmanager alert to a Cachet incident',
+    summary='Translate Alertmanager alerts to a Cachet incidents',
 )
-async def adapt(alertmanager: AlertmanagerWebhook, request: Request) -> AdaptResponse:
+async def adapt(
+    alertmanager: AlertmanagerWebhookContent | list[ApiAlert], request: Request, prune: bool = False
+) -> AdaptResponse:
     cachet_api = request.app.state.cachet_api
+
+    if isinstance(alertmanager, list):
+        alerts = alertmanager
+    else:
+        alerts = alertmanager.alerts
 
     incident_ids = []
     with Session(request.app.state.db_engine) as db_session:
-        for alert in alertmanager.alerts:
+        for alert in alerts:
             incident_id = process_alert(db_session=db_session, cachet_api=cachet_api, alert=alert)
             if incident_id:
+                incident_ids.append(incident_id)
+
+        if prune:
+            resolved_incidents = get_additional_known_incidents(db_session=db_session, incident_ids=incident_ids)
+            for incident_id in resolved_incidents:
+                cachet_api.update_incident(incident_id=incident_id, incident_json={'status': IncidentStatus.FIXED})
+                delete_incident(db_session=db_session, incident_id=incident_id)
                 incident_ids.append(incident_id)
 
     return AdaptResponse(incident_ids=incident_ids)
 
 
 def process_alert(
-    db_session: Session, cachet_api: CachetApi, alert: Alert, secondary_component_incident_visible: bool = True
+    db_session: Session,
+    cachet_api: CachetApi,
+    alert: WebhookAlert | ApiAlert,
+    secondary_component_incident_visible: bool = True,
 ) -> Optional[int]:
     log.debug(f'Adapting {alert.model_dump_json(indent=4)}')
     alert_component_group = alert.labels.cachet_group or alert.labels.org or NONE_GROUP_STR
@@ -61,7 +87,7 @@ def process_alert(
         db_session=db_session,
     )
 
-    incident_status = IncidentStatus.REPORTED if alert.status == AlertmanagerStatus.FIRING else IncidentStatus.FIXED
+    incident_status = extract_incident_status(status=alert.status)
 
     incident_description = 'Experiencing issues'
     if top_level_component_incident:
@@ -86,6 +112,8 @@ def process_alert(
         if incident_id:
             incident_json = incident.model_dump(exclude_none=True, mode='json', include={'status', 'occurred_at'})
             cachet_api.update_incident(incident_id=incident_id, incident_json=incident_json)
+            if incident.status == IncidentStatus.FIXED:
+                delete_incident(db_session=db_session, incident_id=incident_id)
         else:
             incident_json = incident.model_dump(exclude_none=True, mode='json')
             incident_id = cachet_api.create_incident(incident_json=incident_json)
@@ -97,11 +125,27 @@ def process_alert(
         return None
 
 
+def extract_incident_status(status: AlertmanagerWebhookStatus | AlertmanagerStatusObject) -> IncidentStatus:
+    state = status
+    if isinstance(status, AlertmanagerStatusObject):
+        state = status.state
+
+    match state:
+        case AlertmanagerWebhookStatus.FIRING | AlertmanagerApiStatus.ACTIVE:
+            incident_status = IncidentStatus.REPORTED
+        case AlertmanagerApiStatus.SUPPRESSED:
+            incident_status = IncidentStatus.INVESTIGATING
+        case AlertmanagerWebhookStatus.RESOLVED:
+            incident_status = IncidentStatus.FIXED
+        case _:
+            raise NotImplementedError(f'Status {state} unknown.')
+
+    return incident_status
+
+
 def extract_alert_component_status(severity: AlertmanagerSeverity | str) -> ComponentStatus:
     match severity:
-        case AlertmanagerSeverity.CRITICAL:
-            component_status = ComponentStatus.MAJOR_OUTAGE
-        case AlertmanagerSeverity.ERROR:
+        case AlertmanagerSeverity.CRITICAL | AlertmanagerSeverity.ERROR:
             component_status = ComponentStatus.MAJOR_OUTAGE
         case _:
             component_status = ComponentStatus.PARTIAL_OUTAGE

@@ -8,7 +8,7 @@ from sqlmodel import SQLModel, create_engine
 
 from cachet_adapter.route import adapt, component_mapping, health, schedule
 from cachet_adapter.settings import AdapterSettings
-from cachet_adapter.utils.cachetapi import CachetApi
+from cachet_adapter.utils.cachet_api import CachetApi
 from cachet_adapter.utils.exception import validation_exception_handler
 
 log = logging.getLogger(__name__)

@@ -111,6 +111,18 @@ END:VEVENT
 END:VCALENDAR
 ```
 
+##### sync-alerts
+
+It pulls the current list of alerts from the Alertmanager and synchronises them with the CAWA.
+This script is necessary
+because [Alertmanager silences impact the webhook](https://gitlab.heigit.org/heigit/utils/cachet-adapter/-/work_items/19).
+We suggest to run it in a cron-job e.g. every 30min.
+It can also be used as a complete alternative to the webhook.
+
+```shell
+uv run sync-alerts <adapter-url> --alertmanager-url <alertmanager-url>
+```
+
 ## Run
 
 Now start the adapter using `docker compose up`.

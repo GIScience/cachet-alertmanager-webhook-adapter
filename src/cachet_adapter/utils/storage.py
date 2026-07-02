@@ -2,12 +2,12 @@ from typing import Optional, Sequence
 
 from fastapi import HTTPException
 from sqlalchemy import delete
-from sqlmodel import Session, select
+from sqlmodel import Session, not_, select
 
 from cachet_adapter.models.api import ComponentGraphResponse, FlatComponentGraph, NestedComponentGraph
 from cachet_adapter.models.cachet import ComponentStatus, IncidentComponent
 from cachet_adapter.models.database import ComponentGraph, ComponentRelationship, IncidentResolver, ScheduleResolver
-from cachet_adapter.utils.cachetapi import CachetApi
+from cachet_adapter.utils.cachet_api import CachetApi
 
 
 def upsert_mapping(db_session: Session, mappings: list[ComponentGraph]) -> NestedComponentGraph:
@@ -184,10 +184,22 @@ def get_schedule_id(db_session: Session, schedule_id: str) -> Optional[int]:
     return schedule_id
 
 
-def delete_schedule_ids(db_session: Session, schedule_ids: Sequence[int]):
+def delete_incident(db_session: Session, incident_id: int) -> None:
+    stmt = delete(IncidentResolver).where(IncidentResolver.cachet_id == incident_id)
+    db_session.exec(stmt)
+    db_session.commit()
+
+
+def delete_schedule_ids(db_session: Session, schedule_ids: Sequence[int]) -> None:
     stmt = delete(ScheduleResolver).where(ScheduleResolver.cachet_id.in_(schedule_ids))
     db_session.exec(stmt)
     db_session.commit()
+
+
+def get_additional_known_incidents(db_session: Session, incident_ids: Sequence[int]) -> set[int]:
+    cachet_id_stmt = select(IncidentResolver.cachet_id).where(not_(IncidentResolver.cachet_id.in_(incident_ids)))
+    incident_ids = db_session.scalars(cachet_id_stmt)
+    return incident_ids
 
 
 def get_dependent_components(

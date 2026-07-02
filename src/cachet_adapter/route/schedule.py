@@ -9,7 +9,7 @@ from starlette.requests import Request
 from cachet_adapter.models.api import ScheduledIncident, ScheduleResponse
 from cachet_adapter.models.cachet import CachetSchedule, ComponentStatus, IncidentComponent
 from cachet_adapter.models.database import ScheduleResolver
-from cachet_adapter.utils.cachetapi import CachetApi
+from cachet_adapter.utils.cachet_api import CachetApi
 from cachet_adapter.utils.storage import (
     delete_schedule_ids,
     get_dependent_components,

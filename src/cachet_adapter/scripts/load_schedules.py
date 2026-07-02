@@ -18,7 +18,38 @@ def parse_args() -> argparse.Namespace:
         prog='Load Schedules', description='Load a ICS calendar as scheduled maintenance messages'
     )
     parser.add_argument('adapter_url')
-    parser.add_argument('--event-titles', nargs='*', type=str, default=[])
+
+    exclusive_group = parser.add_mutually_exclusive_group()
+    exclusive_group.add_argument(
+        '--file',
+        dest='file',
+        default='data/schedules.ics',
+        help='An .ics file to read schedules from, defaults to data/schedules.ics .',
+    )
+    exclusive_group.add_argument(
+        '--url',
+        dest='url',
+        required=False,
+        help='An ICS-URL to load schedules from. This and the file are mutually exclusive.',
+    )
+
+    parser.add_argument(
+        '--event-titles',
+        nargs='*',
+        type=str,
+        default=[],
+        help='Event titles that should be included in the scheduled maintenances. '
+        'All events with non-mathing titles, will be ignored.',
+    )
+    parser.add_argument(
+        '--link-all-components-keyword',
+        type=str,
+        default='[cachet:all]',
+        help='A string sequence that tells the script to link all components in cachet to the schedule.'
+        'Otherwise the event-message must be a JSON of components equal to the one used in `load-components`.'
+        'If both are not there, no component will be linked.',
+    )
+
     parser.add_argument(
         '--prune',
         action='store_true',
@@ -28,11 +59,6 @@ def parse_args() -> argparse.Namespace:
         'calendar.'
         'The Cachet will then be in-synch with the file (except manually created schedules).',
     )
-    parser.add_argument('--link-all-components-keyword', type=str, default='[cachet:all]')
-
-    exclusive_group = parser.add_mutually_exclusive_group()
-    exclusive_group.add_argument('--file', dest='file', default='data/schedules.ics')
-    exclusive_group.add_argument('--url', dest='url', required=False)
 
     args = parser.parse_args()
 

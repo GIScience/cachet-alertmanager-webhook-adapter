@@ -5,9 +5,14 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class AlertmanagerStatus(StrEnum):
+class AlertmanagerWebhookStatus(StrEnum):
     FIRING = 'firing'
     RESOLVED = 'resolved'
+
+
+class AlertmanagerApiStatus(StrEnum):
+    ACTIVE = 'active'
+    SUPPRESSED = 'suppressed'
 
 
 class AlertmanagerSeverity(StrEnum):
@@ -15,6 +20,10 @@ class AlertmanagerSeverity(StrEnum):
     ERROR = 'error'
     WARNING = 'warning'
     INFO = 'info'
+
+
+class AlertmanagerStatusObject(BaseModel):
+    state: AlertmanagerApiStatus
 
 
 class AlertmanagerLabel(BaseModel):
@@ -32,14 +41,18 @@ class AlertmanagerAnnotation(BaseModel):
     summary: Optional[str] = None
 
 
-class Alert(BaseModel):
-    status: AlertmanagerStatus
+class WebhookAlert(BaseModel):
+    status: AlertmanagerWebhookStatus
     labels: AlertmanagerLabel
     annotations: AlertmanagerAnnotation = AlertmanagerAnnotation()
     startsAt: datetime  # noqa: N815
     fingerprint: str
 
 
-class AlertmanagerWebhook(BaseModel):
+class ApiAlert(WebhookAlert):
+    status: AlertmanagerStatusObject
+
+
+class AlertmanagerWebhookContent(BaseModel):
     # https://prometheus.io/docs/alerting/latest/configuration/#webhook_config
-    alerts: list[Alert]
+    alerts: list[WebhookAlert]

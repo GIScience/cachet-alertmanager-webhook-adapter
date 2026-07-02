@@ -38,6 +38,7 @@ start-adapter = "cachet_adapter.api:main"
 load-components = "cachet_adapter.scripts.load_components:main"
 load-dependencies = "cachet_adapter.scripts.load_dependencies:main"
 load-schedules = "cachet_adapter.scripts.load_schedules:main"
+sync-alerts = "cachet_adapter.scripts.sync_alerts:main"
 
 [tool.ruff]
 line-length = 120
