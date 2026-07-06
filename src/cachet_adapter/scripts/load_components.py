@@ -64,6 +64,7 @@ def load_components(api: CachetApi, data: ComponentData, prune: bool = False) ->
                 component_id = api.create_component(component=component, group_id=group_id)
             else:
                 component_id = available_components.pop(component.name)['id']
+                api.update_component(component=component, group_id=group_id, component_id=component_id)
             group_component_id_list.append(component_id)
 
         result[group_id] = group_component_id_list

@@ -82,6 +82,12 @@ class CachetApi(HttpConnection):
         component_id = response_component.data.id
         return component_id
 
+    def update_component(self, component: BaseComponent, group_id: int, component_id: int) -> None:
+        component_data = component.model_dump(mode='json', exclude_none=True)
+        component_data = component_data | {'component_group_id': group_id}
+        response = self.session.put(f'{self.base_url}/components/{component_id}', json=component_data)
+        response.raise_for_status()
+
     def delete_component(self, component_id: int) -> None:
         self.session.delete(f'{self.base_url}/components/{component_id}')
 

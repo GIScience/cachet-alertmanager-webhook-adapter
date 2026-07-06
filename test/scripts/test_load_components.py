@@ -54,7 +54,7 @@ def test_load_components(mocked_api, responses):
     assert result_ids == {1: [1]}
 
 
-def test_dont_load_components_that_exist(mocked_api, responses):
+def test_update_components_that_exist(mocked_api, responses):
     group_create_request, component_create_request = a_component_creation_responses(responses=responses)
 
     cachet_response = {
@@ -80,6 +80,16 @@ def test_dont_load_components_that_exist(mocked_api, responses):
 
     data = ComponentData({'general': [{'name': 'a'}]})
     load_components(api=mocked_api, data=data)
+
+    cachet_request = {
+        'name': 'a',
+        'status': 1,
+        'component_group_id': 1,
+    }
+    responses.put(
+        'http://test-cachet/api/components/1',
+        match=[matchers.json_params_matcher(cachet_request)],
+    )
     load_components(api=mocked_api, data=data)
 
     assert group_create_request.call_count == 1
