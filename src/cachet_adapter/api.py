@@ -33,7 +33,7 @@ async def configure_dependencies(the_app: FastAPI):
 
 
 app = FastAPI(
-    title='Cachet Alertmanager Webhook Adapter',
+    title='Cachet-compatible Alertmanager Webhook Adapter',
     summary='Prometheus to Cachet Adaptation Service',
     description='A webhook adapter that translates [Prometheus Alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/) alerts into [Cachet](https://cachethq.io/) status page incidents, and updates components.',
     version='0.0.1',

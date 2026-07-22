@@ -1,8 +1,11 @@
-# <img src="resources/icon.png" width="5%"> Cachet Alertmanager Webhook Adapter (CAWA)
+# <img src="resources/icon.png" width="5%"> Cachet-compatible Alertmanager Webhook Adapter (CAWA)
 
 A webhook adapter that translates [Prometheus Alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/)
 alerts into [Cachet](https://cachethq.io/) status page incidents, and updates components.
 It maintains a component dependency graph to automatically propagate status changes to dependent components.
+
+> This is an independent, community-maintained project. It is not affiliated with, sponsored by, or endorsed by
+> Cachet or Prometheus Alertmanager. See [TRADEMARK.md](TRADEMARK.md) for details on trademarks and endorsement.
 
 <details>
 <summary>Table of Contents</summary>
@@ -422,6 +425,14 @@ existing incident rather than creating duplicates.
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and code style guidelines.
+
+## Trademarks & Endorsement
+
+This project is not affiliated with, sponsored by, or endorsed by Cachet / CachetHQ or the
+Prometheus / Alertmanager projects. "Cachet", "Prometheus", and "Alertmanager" are trademarks of
+their respective owners and are used here only to describe interoperability. The project
+[license](LICENSE) covers this repository's own source code and does not extend to those
+third-party names or marks. See [TRADEMARK.md](TRADEMARK.md) for the full statement.
 
 ## Attribution
 
