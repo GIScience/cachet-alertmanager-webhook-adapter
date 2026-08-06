@@ -10,6 +10,7 @@ from starlette.testclient import TestClient
 
 from cachet_adapter.api import app
 from cachet_adapter.models.database import ComponentGraph, ComponentRelationship
+from cachet_adapter.settings import OverrideMode
 from cachet_adapter.utils.cachet_api import CachetApi
 
 TEST_RESOURCES = Path(__file__).parent / 'resources'
@@ -44,6 +45,34 @@ def mocked_client(database, mocked_api) -> TestClient:
     app.state.cachet_api = mocked_api
 
     app.state.db_engine = database
+
+    app.state.override_mode = OverrideMode.SUPPLIER
+
+    client = TestClient(app)
+
+    return client
+
+
+@pytest.fixture
+def mocked_overwrite_all_client(database, mocked_api) -> TestClient:
+    app.state.cachet_api = mocked_api
+
+    app.state.db_engine = database
+
+    app.state.override_mode = OverrideMode.ALL
+
+    client = TestClient(app)
+
+    return client
+
+
+@pytest.fixture
+def mocked_overwrite_none_client(database, mocked_api) -> TestClient:
+    app.state.cachet_api = mocked_api
+
+    app.state.db_engine = database
+
+    app.state.override_mode = OverrideMode.NONE
 
     client = TestClient(app)
 

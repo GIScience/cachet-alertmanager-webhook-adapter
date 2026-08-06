@@ -320,6 +320,345 @@ def test_adapt_custom_tag_overwrites_job_name(mocked_client, responses):
     assert response.json() == {'incident_ids': [30]}
 
 
+def test_adapt_in_override_all_mode(mocked_overwrite_all_client, responses):
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+
+    cachet_request = {
+        'name': 'Component a experiences issues',
+        'status': 0,
+        'message': 'Experiencing issues',
+        'visible': True,
+        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'components': [{'id': 1, 'status': 4}],
+    }
+    cachet_header = {
+        'Authorization': 'Bearer my-token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
+    responses.post(
+        'http://test-cachet/api/incidents',
+        match=[
+            matchers.json_params_matcher(cachet_request, strict_match=False),
+            matchers.header_matcher(cachet_header),
+        ],
+        json=cachet_response,
+    )
+
+    alertmanager_request = {
+        'alerts': [
+            {
+                'status': 'firing',
+                'labels': {'job': 'a'},
+                'annotations': {
+                    'summary': 'summary that should not be forwarded',
+                    'description': 'description that should not be forwarded',
+                    'title': 'title that should not be forwarded',
+                },
+                'startsAt': '2025-11-20T15:54:41.898000Z',
+                'fingerprint': 'fingerprint',
+            }
+        ]
+    }
+
+    response = mocked_overwrite_all_client.post('/adapt', json=alertmanager_request)
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+
+def test_adapt_in_override_all_mode_supplier_component(mocked_overwrite_all_client, responses, load_component_chain):
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
+        json={'data': []},
+    )
+
+    cachet_request = {
+        'name': 'A required downstream component experiences issues',
+        'status': 0,
+        'message': 'Experiencing issues',
+        'visible': True,
+        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'components': [{'id': 1, 'status': 4}],
+    }
+    cachet_header = {
+        'Authorization': 'Bearer my-token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
+    responses.post(
+        'http://test-cachet/api/incidents',
+        match=[
+            matchers.json_params_matcher(cachet_request, strict_match=False),
+            matchers.header_matcher(cachet_header),
+        ],
+        json=cachet_response,
+    )
+
+    alertmanager_request = {
+        'alerts': [
+            {
+                'status': 'firing',
+                'labels': {'job': 'b'},
+                'annotations': {
+                    'summary': 'summary that should not be forwarded',
+                    'description': 'description that should not be forwarded',
+                    'title': 'title that should not be forwarded',
+                },
+                'startsAt': '2025-11-20T15:54:41.898000Z',
+                'fingerprint': 'fingerprint',
+            }
+        ]
+    }
+
+    response = mocked_overwrite_all_client.post('/adapt', json=alertmanager_request)
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+
+def test_adapt_in_override_secondary_mode(mocked_client, responses):
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+
+    cachet_request = {
+        'name': 'title that should be forwarded',
+        'status': 0,
+        'message': 'summary that should be forwarded',
+        'visible': True,
+        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'components': [{'id': 1, 'status': 4}],
+    }
+    cachet_header = {
+        'Authorization': 'Bearer my-token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
+    responses.post(
+        'http://test-cachet/api/incidents',
+        match=[
+            matchers.json_params_matcher(cachet_request, strict_match=False),
+            matchers.header_matcher(cachet_header),
+        ],
+        json=cachet_response,
+    )
+
+    alertmanager_request = {
+        'alerts': [
+            {
+                'status': 'firing',
+                'labels': {'job': 'a'},
+                'annotations': {
+                    'summary': 'summary that should be forwarded',
+                    'description': 'description that should be forwarded',
+                    'title': 'title that should be forwarded',
+                },
+                'startsAt': '2025-11-20T15:54:41.898000Z',
+                'fingerprint': 'fingerprint',
+            }
+        ]
+    }
+
+    response = mocked_client.post('/adapt', json=alertmanager_request)
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+
+def test_adapt_in_override_secondary_mode_supplier_component(mocked_client, responses, load_component_chain):
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
+        json={'data': []},
+    )
+
+    cachet_request = {
+        'name': 'A required downstream component experiences issues',
+        'status': 0,
+        'message': 'Experiencing issues',
+        'visible': True,
+        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'components': [{'id': 1, 'status': 4}],
+    }
+    cachet_header = {
+        'Authorization': 'Bearer my-token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
+    responses.post(
+        'http://test-cachet/api/incidents',
+        match=[
+            matchers.json_params_matcher(cachet_request, strict_match=False),
+            matchers.header_matcher(cachet_header),
+        ],
+        json=cachet_response,
+    )
+
+    alertmanager_request = {
+        'alerts': [
+            {
+                'status': 'firing',
+                'labels': {'job': 'b'},
+                'annotations': {
+                    'summary': 'summary that should not be forwarded',
+                    'description': 'description that should not be forwarded',
+                    'title': 'title that should not be forwarded',
+                },
+                'startsAt': '2025-11-20T15:54:41.898000Z',
+                'fingerprint': 'fingerprint',
+            }
+        ]
+    }
+
+    response = mocked_client.post('/adapt', json=alertmanager_request)
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+
+def test_adapt_in_override_none_mode(mocked_overwrite_none_client, responses):
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+
+    cachet_request = {
+        'name': 'title that should be forwarded',
+        'status': 0,
+        'message': 'summary that should be forwarded',
+        'visible': True,
+        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'components': [{'id': 1, 'status': 4}],
+    }
+    cachet_header = {
+        'Authorization': 'Bearer my-token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
+    responses.post(
+        'http://test-cachet/api/incidents',
+        match=[
+            matchers.json_params_matcher(cachet_request, strict_match=False),
+            matchers.header_matcher(cachet_header),
+        ],
+        json=cachet_response,
+    )
+
+    alertmanager_request = {
+        'alerts': [
+            {
+                'status': 'firing',
+                'labels': {'job': 'a'},
+                'annotations': {
+                    'summary': 'summary that should be forwarded',
+                    'description': 'description that should be forwarded',
+                    'title': 'title that should be forwarded',
+                },
+                'startsAt': '2025-11-20T15:54:41.898000Z',
+                'fingerprint': 'fingerprint',
+            }
+        ]
+    }
+
+    response = mocked_overwrite_none_client.post('/adapt', json=alertmanager_request)
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+
+def test_adapt_in_override_none_mode_supplier_component(mocked_overwrite_none_client, responses, load_component_chain):
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
+        json={'data': []},
+    )
+
+    cachet_request = {
+        'name': 'title that should be forwarded',
+        'status': 0,
+        'message': 'summary that should be forwarded',
+        'visible': True,
+        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'components': [{'id': 1, 'status': 4}],
+    }
+    cachet_header = {
+        'Authorization': 'Bearer my-token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
+    responses.post(
+        'http://test-cachet/api/incidents',
+        match=[
+            matchers.json_params_matcher(cachet_request, strict_match=False),
+            matchers.header_matcher(cachet_header),
+        ],
+        json=cachet_response,
+    )
+
+    alertmanager_request = {
+        'alerts': [
+            {
+                'status': 'firing',
+                'labels': {'job': 'b'},
+                'annotations': {
+                    'summary': 'summary that should be forwarded',
+                    'description': 'description that should be forwarded',
+                    'title': 'title that should be forwarded',
+                },
+                'startsAt': '2025-11-20T15:54:41.898000Z',
+                'fingerprint': 'fingerprint',
+            }
+        ]
+    }
+
+    response = mocked_overwrite_none_client.post('/adapt', json=alertmanager_request)
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+
 def test_adapt_links_incidents_to_dependent_components(mocked_client, responses, load_component_chain):
     responses.get(
         'http://test-cachet/api/components',
@@ -985,7 +1324,7 @@ def test_adapt_creates_new_incident_if_previous_fixed(mocked_client, responses):
     assert post_b.call_count == 1
 
 
-def test_adapt_marks_required_dependents_as_major_outage(mocked_client, load_component_chain, responses):
+def test_adapt_marks_dependents_requiering_supplier_as_major_outage(mocked_client, load_component_chain, responses):
     responses.get(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
@@ -1034,7 +1373,9 @@ def test_adapt_marks_required_dependents_as_major_outage(mocked_client, load_com
     assert response.json() == {'incident_ids': [30]}
 
 
-def test_adapt_marks_optional_dependents_as_partial_outage(mocked_client, load_component_chain, responses):
+def test_adapt_marks_dependents_optionally_relying_on_supplier_as_partial_outage(
+    mocked_client, load_component_chain, responses
+):
     responses.get(
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],

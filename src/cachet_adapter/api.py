@@ -28,6 +28,8 @@ async def configure_dependencies(the_app: FastAPI):
     SQLModel.metadata.create_all(engine)
 
     the_app.state.db_engine = engine
+    the_app.state.override_mode = settings.message_override
+
     log.debug('API configured')
     yield
 

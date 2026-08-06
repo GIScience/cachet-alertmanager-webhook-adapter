@@ -22,6 +22,7 @@ from cachet_adapter.models.cachet import (
     IncidentStatus,
 )
 from cachet_adapter.models.database import NONE_GROUP_STR
+from cachet_adapter.settings import OverrideMode
 from cachet_adapter.utils.cachet_api import CachetApi
 from cachet_adapter.utils.storage import (
     delete_incident,
@@ -55,7 +56,12 @@ async def adapt(
     incident_ids = []
     with Session(request.app.state.db_engine) as db_session:
         for alert in alerts:
-            incident_id = process_alert(db_session=db_session, cachet_api=cachet_api, alert=alert)
+            incident_id = process_alert(
+                db_session=db_session,
+                cachet_api=cachet_api,
+                alert=alert,
+                message_override=request.app.state.override_mode,
+            )
             if incident_id:
                 incident_ids.append(incident_id)
 
@@ -73,6 +79,7 @@ def process_alert(
     db_session: Session,
     cachet_api: CachetApi,
     alert: WebhookAlert | ApiAlert,
+    message_override: OverrideMode,
     secondary_component_incident_visible: bool = True,
 ) -> Optional[int]:
     log.debug(f'Adapting {alert.model_dump_json(indent=4)}')
@@ -107,6 +114,7 @@ def process_alert(
                 linked_components=linked_components,
                 top_level_component_incident=top_level_component_incident,
                 secondary_component_incident_visible=secondary_component_incident_visible,
+                message_override=message_override,
             )
         else:
             log.debug('Not creating incident because there are no linked components and no force-flag')
@@ -123,13 +131,14 @@ def create_new_incident(
     linked_components: set[IncidentComponent],
     top_level_component_incident: bool,
     secondary_component_incident_visible: bool,
+    message_override: OverrideMode,
 ) -> int:
-    incident_description = 'Experiencing issues'
-    if top_level_component_incident:
-        incident_name = alert.annotations.title or f'Component {alert_component_name} experiences issues'
-        incident_description = alert.annotations.summary or alert.annotations.description or incident_description
-    else:
-        incident_name = 'A required downstream component experiences issues'
+    incident_name, incident_description = extract_name_and_description(
+        alert=alert,
+        alert_component_name=alert_component_name,
+        top_level_component_incident=top_level_component_incident,
+        message_override=message_override,
+    )
 
     visible = top_level_component_incident or secondary_component_incident_visible
     incident = Incident(
@@ -146,6 +155,35 @@ def create_new_incident(
         db_session=db_session, starts_at=alert.startsAt, fingerprint=alert.fingerprint, incident_id=incident_id
     )
     return incident_id
+
+
+def extract_name_and_description(
+    alert: WebhookAlert | ApiAlert,
+    alert_component_name: str,
+    message_override: OverrideMode,
+    top_level_component_incident: bool,
+) -> tuple[str, str]:
+    if top_level_component_incident:
+        incident_name = f'Component {alert_component_name} experiences issues'
+    else:
+        incident_name = 'A required downstream component experiences issues'
+    incident_description = 'Experiencing issues'
+
+    match message_override:
+        case OverrideMode.ALL:
+            pass
+        case OverrideMode.SUPPLIER:
+            if top_level_component_incident:
+                incident_name = alert.annotations.title or f'Component {alert_component_name} experiences issues'
+                incident_description = (
+                    alert.annotations.summary or alert.annotations.description or incident_description
+                )
+        case OverrideMode.NONE:
+            incident_name = alert.annotations.title or f'Component {alert_component_name} experiences issues'
+            incident_description = alert.annotations.summary or alert.annotations.description or incident_description
+        case _:
+            raise NotImplementedError(f'Mode {message_override} not implemented.')
+    return incident_name, incident_description
 
 
 def handle_known_incident(
