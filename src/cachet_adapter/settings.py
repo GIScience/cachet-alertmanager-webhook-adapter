@@ -1,6 +1,7 @@
 from enum import StrEnum
+from pathlib import Path
 
-from pydantic import FilePath, HttpUrl
+from pydantic import HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,6 +22,8 @@ class AdapterSettings(BaseSettings):
 
     message_override: OverrideMode = OverrideMode.SUPPLIER
 
-    sqlite_file: FilePath = FilePath('cachet_adapter.sqlite')
+    sqlite_file: Path = Path(
+        'cachet_adapter.sqlite'
+    )  # Don't make this a Pydantic FilePath, because we want to create it if it doesn't exist
 
     model_config = SettingsConfigDict(env_file='.env')

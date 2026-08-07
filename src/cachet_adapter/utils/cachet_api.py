@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Optional
 
@@ -32,6 +33,7 @@ class CachetApi(HttpConnection):
 
     def create_group(self, group: CachetGroupAttributes) -> int:
         group_data = group.model_dump(mode='json')
+        log.debug(f'Creating group {json.dumps(group_data, indent=4)}')
         response = self.session.post(f'{self.base_url}/component-groups', json=group_data)
         response.raise_for_status()
         response_json = response.json()
@@ -75,6 +77,7 @@ class CachetApi(HttpConnection):
     def create_component(self, component: BaseComponent, group_id: int) -> int:
         component_data = component.model_dump(mode='json', exclude_none=True)
         component_data = component_data | {'component_group_id': group_id}
+        log.debug(f'Creating component {json.dumps(component_data, indent=4)}')
         response = self.session.post(f'{self.base_url}/components', json=component_data)
         response.raise_for_status()
         response_json = response.json()
@@ -99,8 +102,9 @@ class CachetApi(HttpConnection):
         return cachet_response
 
     def create_incident(self, incident: Incident) -> int:
-        incident_json = incident.model_dump(exclude_none=True, mode='json')
-        response = self.session.post(f'{self.base_url}/incidents', json=incident_json)
+        incident_data = incident.model_dump(exclude_none=True, mode='json')
+        log.debug(f'Creating incident {json.dumps(incident_data, indent=4)}')
+        response = self.session.post(f'{self.base_url}/incidents', json=incident_data)
         response.raise_for_status()
         response_json = response.json()
         cachet_response = CachetIncidentResponse.model_validate(response_json)
@@ -120,9 +124,9 @@ class CachetApi(HttpConnection):
         return ids
 
     def create_schedule(self, scheduled_incident: CachetSchedule) -> int:
-        response = self.session.post(
-            f'{self.base_url}/schedules', json=scheduled_incident.model_dump(mode='json', exclude_none=True)
-        )
+        schedule_data = scheduled_incident.model_dump(mode='json', exclude_none=True)
+        log.debug(f'Creating schedule {json.dumps(schedule_data, indent=4)}')
+        response = self.session.post(f'{self.base_url}/schedules', json=schedule_data)
         response.raise_for_status()
         response_json = response.json()
         cachet_response = CachetScheduleResponse.model_validate(response_json)

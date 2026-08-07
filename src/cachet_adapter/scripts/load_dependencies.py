@@ -1,9 +1,13 @@
 import argparse
 import csv
+import json
+import logging
 
 import requests
 
 from cachet_adapter.route.component_mapping import COMPONENT_MAPPING_PATH
+
+log = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
@@ -39,6 +43,8 @@ def load_dependencies(
     adapter_url: str,
     prune: bool = False,
 ) -> None:
+    log.info(f'Uploading {len(data)} dependencies')
+    log.debug(f'Uploading {json.dumps(data, indent=4)}')
     response = requests.post(f'{adapter_url}/{COMPONENT_MAPPING_PATH}', json=data, params={'prune': prune})
     response.raise_for_status()
 

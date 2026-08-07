@@ -137,6 +137,7 @@ def load_schedules(
 
     if schedules:
         log.info(f'Uploading {len(schedules)} events')
+        log.debug(f'Uploading {json.dumps(schedules, indent=4)}')
         response = requests.post(f'{adapter_url}/schedule', json=schedules, params={'prune': prune})
         response.raise_for_status()
     else:

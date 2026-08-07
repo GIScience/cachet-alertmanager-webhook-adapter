@@ -1,8 +1,12 @@
 import argparse
+import json
+import logging
 
 import requests
 
 from cachet_adapter.utils.alertmanager_api import AlertmanagerApi
+
+log = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
@@ -42,6 +46,8 @@ def sync_alerts(
 ) -> None:
     alerts = alertmanager_api.get_alerts()
 
+    log.info(f'Synching {len(alerts)} alerts')
+    log.debug(f'Synching {json.dumps(alerts, indent=4)}')
     response = requests.post(f'{adapter_url}/adapt', json=alerts, params={'prune': prune})
     response.raise_for_status()
 
