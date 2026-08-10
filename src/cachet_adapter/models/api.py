@@ -1,8 +1,8 @@
-from datetime import datetime
 from typing import Literal, Optional
 
 from pydantic import BaseModel
 
+from cachet_adapter.models import UtcDateTime
 from cachet_adapter.models.database import ComponentGraph
 
 
@@ -14,8 +14,8 @@ class ScheduledIncident(BaseModel):
     id: str
     name: str
     message: str = 'A scheduled downtime'
-    scheduled_at: datetime
-    completed_at: datetime
+    scheduled_at: UtcDateTime
+    completed_at: UtcDateTime
     components: Optional[dict[str, list[str]]] | Literal['all']
 
 

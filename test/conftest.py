@@ -17,7 +17,7 @@ TEST_RESOURCES = Path(__file__).parent / 'resources'
 
 @pytest.fixture
 def frozen_time():
-    with freeze_time(datetime(2026, 6, 1, 12, tzinfo=UTC)) as frozen_time:
+    with freeze_time(datetime(2026, 5, 31, 12, tzinfo=UTC), tick=False) as frozen_time:
         yield frozen_time
 
 

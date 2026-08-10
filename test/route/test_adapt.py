@@ -24,7 +24,7 @@ def create_default_incident(responses, mocked_client) -> tuple[requests.Response
         'status': 0,
         'message': 'Component a is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
     }
     cachet_header = {
@@ -82,7 +82,7 @@ def test_adapt_request_without_annotations(mocked_client, responses):
         'status': 0,
         'message': 'Experiencing issues',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
     }
     cachet_header = {
@@ -135,7 +135,7 @@ def test_adapt_creates_incident_matching_component_name(mocked_client, responses
         'status': 0,
         'message': 'Component a is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
     }
     cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
@@ -187,7 +187,7 @@ def test_adapt_creates_incident_matching_group(mocked_client, responses):
         'status': 0,
         'message': 'Component a is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 2, 'status': 4}],
     }
     cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
@@ -239,7 +239,7 @@ def test_adapt_creates_incident_matching_org(mocked_client, responses):
         'status': 0,
         'message': 'Component a is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 2, 'status': 4}],
     }
     cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
@@ -290,7 +290,7 @@ def test_adapt_custom_tag_overwrites_job_name(mocked_client, responses):
         'status': 0,
         'message': 'Component b is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 2, 'status': 4}],
     }
     cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
@@ -447,7 +447,7 @@ def test_adapt_links_incidents_to_dependent_components(mocked_client, responses,
         'status': 0,
         'message': 'Component b is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 2, 'status': 4}, {'id': 1, 'status': 4}],
     }
     cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
@@ -516,7 +516,7 @@ def test_adapt_links_incidents_to_dependent_components_respects_group(database, 
         'status': 0,
         'message': 'Component a is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 5, 'status': 4}, {'id': 1, 'status': 4}],
     }
     cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
@@ -575,7 +575,7 @@ def test_adapt_dependent_component_respect_relationship(mocked_client, responses
         'status': 0,
         'message': 'Component c is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [
             {'id': 2, 'status': 3},
             {'id': 3, 'status': 4},
@@ -631,7 +631,7 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component(
         'status': 0,
         'message': 'Experiencing issues',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
     }
     cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
@@ -683,7 +683,7 @@ def test_adapt_links_incidents_to_dependent_components_dependent_no_compnent(
         'status': 0,
         'message': 'Component b is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 2, 'status': 4}],
     }
     cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
@@ -738,7 +738,7 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component_in_grou
         'status': 0,
         'message': 'Experiencing issues',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
     }
     cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
@@ -783,7 +783,7 @@ def test_adapt_does_create_incident_without_linked_components_if_forced(mocked_c
         'status': 0,
         'message': 'Experiencing issues',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [],
     }
     cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
@@ -855,7 +855,7 @@ def test_adapt_respects_severity(mocked_client, responses):
         'status': 0,
         'message': 'Component a is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 3}],
     }
     cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
@@ -907,7 +907,7 @@ def test_adapt_respects_severity_for_dependencies(mocked_client, responses, load
         'status': 0,
         'message': 'Component b is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 2, 'status': 3}, {'id': 1, 'status': 3}],
     }
     cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
@@ -1061,7 +1061,7 @@ def test_adapt_creates_new_incident_if_previous_fixed(mocked_client, responses):
         'status': 0,
         'message': 'Component a is down.',
         'visible': True,
-        'occurred_at': '2025-11-21T15:54:41.898000Z',
+        'occurred_at': '2025-11-21 15:54:41',
         'components': [{'id': 1, 'status': 4}],
     }
     post_b = responses.post(
@@ -1116,7 +1116,7 @@ def test_adapt_marks_dependents_requiering_supplier_as_major_outage(mocked_clien
                     'status': 0,
                     'message': 'Component b is down.',
                     'visible': True,
-                    'occurred_at': '2025-11-20T15:54:41.898000Z',
+                    'occurred_at': '2025-11-20 15:54:41',
                     'components': [{'id': 2, 'status': 4}, {'id': 1, 'status': 4}],
                 }
             ),
@@ -1174,7 +1174,7 @@ def test_adapt_marks_dependents_optionally_relying_on_supplier_as_partial_outage
                     'status': 0,
                     'message': 'Component c is down.',
                     'visible': True,
-                    'occurred_at': '2025-11-20T15:54:41.898000Z',
+                    'occurred_at': '2025-11-20 15:54:41',
                     'components': [
                         {'id': 2, 'status': 3},
                         {'id': 1, 'status': 3},
@@ -1216,7 +1216,7 @@ def test_adapt_pulled_incident_unknown_active(mocked_client, responses):
         'status': 0,
         'message': 'Component a is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
     }
     cachet_header = {
@@ -1266,7 +1266,7 @@ def test_adapt_pulled_incident_unknown_suppressed(mocked_client, responses):
         'status': 1,
         'message': 'Component a is down.',
         'visible': True,
-        'occurred_at': '2025-11-20T15:54:41.898000Z',
+        'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
     }
     cachet_header = {

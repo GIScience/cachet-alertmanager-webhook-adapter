@@ -1,7 +1,7 @@
 import argparse
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from json import JSONDecodeError
 
 import recurring_ical_events
@@ -93,8 +93,8 @@ def load_schedules(
     calendar_monitoring_time_range: timedelta = timedelta(weeks=4),
     prune: bool = False,
 ) -> None:
-    from_ts = datetime.now() - calendar_monitoring_time_range
-    to_ts = datetime.now() + calendar_monitoring_time_range
+    from_ts = datetime.now(tz=UTC) - calendar_monitoring_time_range
+    to_ts = datetime.now(tz=UTC) + calendar_monitoring_time_range
     recurring_events = recurring_ical_events.of(calendar)
     # protected function will be published in next release of library:
     events = recurring_events._occurrences_between(start=from_ts, end=to_ts)

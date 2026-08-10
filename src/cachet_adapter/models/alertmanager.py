@@ -1,8 +1,9 @@
-from datetime import datetime
 from enum import StrEnum
 from typing import Optional
 
 from pydantic import BaseModel
+
+from cachet_adapter.models import UtcDateTime
 
 
 class AlertmanagerWebhookStatus(StrEnum):
@@ -45,7 +46,7 @@ class WebhookAlert(BaseModel):
     status: AlertmanagerWebhookStatus
     labels: AlertmanagerLabel
     annotations: AlertmanagerAnnotation = AlertmanagerAnnotation()
-    startsAt: datetime  # noqa: N815
+    startsAt: UtcDateTime  # noqa: N815
     fingerprint: str
 
 

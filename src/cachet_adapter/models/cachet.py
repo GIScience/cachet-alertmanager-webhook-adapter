@@ -1,13 +1,14 @@
-from datetime import UTC, datetime
 from enum import IntEnum
 from typing import Annotated, Optional
 
 from pydantic import BaseModel, Field, HttpUrl, PlainSerializer, StringConstraints
 
+from cachet_adapter.models import UtcDateTime
+
 type CachetStr = Annotated[str, StringConstraints(min_length=1)]
 type CachetDateTime = Annotated[
-    datetime,
-    PlainSerializer(lambda _datetime: _datetime.astimezone(UTC).strftime('%Y-%m-%d %H:%M:%S'), return_type=str),
+    UtcDateTime,
+    PlainSerializer(lambda _datetime: _datetime.strftime('%Y-%m-%d %H:%M:%S'), return_type=str),
 ]
 type CachetId = Annotated[int, Field(ge=1)]
 
@@ -58,7 +59,7 @@ class Incident(BaseModel):
     status: Optional[IncidentStatus] = None
     message: CachetStr
     visible: bool = False
-    occurred_at: Optional[datetime] = None
+    occurred_at: Optional[CachetDateTime] = None
     components: Optional[list[IncidentComponent]] = None
 
 
