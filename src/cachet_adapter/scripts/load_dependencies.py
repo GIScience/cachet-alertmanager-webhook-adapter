@@ -15,9 +15,7 @@ def parse_args() -> argparse.Namespace:
         prog='Load Dependencies', description='Load a CSV file of component dependencies into the Cachet adapter'
     )
     parser.add_argument('adapter_url')
-    parser.add_argument(
-        '--graph-file', type=argparse.FileType('r'), dest='graph_file', default='data/dependency_graph.csv'
-    )
+    parser.add_argument('--graph-file', dest='graph_file', default='data/dependency_graph.csv')
     parser.add_argument(
         '--prune',
         action='store_true',
@@ -32,8 +30,9 @@ def parse_args() -> argparse.Namespace:
 
 def main():
     args = parse_args()
-    reader = csv.DictReader(args.graph_file)
-    data = list(reader)
+    with open(args.graph_file, 'r') as f:
+        reader = csv.DictReader(f)
+        data = list(reader)
 
     load_dependencies(data=data, prune=args.prune, adapter_url=args.adapter_url)
 

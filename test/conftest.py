@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 from freezegun import freeze_time
-from pydantic import HttpUrl
 from sqlalchemy import Engine, StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 from starlette.testclient import TestClient
@@ -37,7 +36,7 @@ def database() -> Engine:
 
 @pytest.fixture
 def mocked_api() -> CachetApi:
-    return CachetApi(base_url=HttpUrl('http://test-cachet/api'), token='my-token')
+    return CachetApi(base_url='http://test-cachet/api', token='my-token')
 
 
 @pytest.fixture
@@ -47,32 +46,6 @@ def mocked_client(database, mocked_api) -> TestClient:
     app.state.db_engine = database
 
     app.state.override_mode = OverrideMode.SUPPLIER
-
-    client = TestClient(app)
-
-    return client
-
-
-@pytest.fixture
-def mocked_overwrite_all_client(database, mocked_api) -> TestClient:
-    app.state.cachet_api = mocked_api
-
-    app.state.db_engine = database
-
-    app.state.override_mode = OverrideMode.ALL
-
-    client = TestClient(app)
-
-    return client
-
-
-@pytest.fixture
-def mocked_overwrite_none_client(database, mocked_api) -> TestClient:
-    app.state.cachet_api = mocked_api
-
-    app.state.db_engine = database
-
-    app.state.override_mode = OverrideMode.NONE
 
     client = TestClient(app)
 

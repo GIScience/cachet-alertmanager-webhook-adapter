@@ -190,7 +190,7 @@ def get_schedule_id(db_session: Session, schedule_id: str) -> Optional[int]:
 
 def delete_incident(db_session: Session, incident_id: int) -> None:
     stmt = delete(IncidentResolver).where(IncidentResolver.cachet_id == incident_id)
-    db_session.exec(stmt)
+    db_session.exec(statement=stmt)
     db_session.commit()
 
 
@@ -203,7 +203,7 @@ def delete_schedule_ids(db_session: Session, schedule_ids: Sequence[int]) -> Non
 def get_additional_known_incidents(db_session: Session, incident_ids: Sequence[int]) -> set[int]:
     cachet_id_stmt = select(IncidentResolver.cachet_id).where(not_(IncidentResolver.cachet_id.in_(incident_ids)))
     incident_ids = db_session.scalars(cachet_id_stmt)
-    return incident_ids
+    return set(incident_ids)
 
 
 def get_dependent_components(

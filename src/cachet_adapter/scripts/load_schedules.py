@@ -93,21 +93,26 @@ def load_schedules(
     calendar_monitoring_time_range: timedelta = timedelta(weeks=4),
     prune: bool = False,
 ) -> None:
-    events = recurring_ical_events.of(calendar)._occurrences_between(
-        datetime.now() - calendar_monitoring_time_range, datetime.now() + calendar_monitoring_time_range
-    )
+    from_ts = datetime.now() - calendar_monitoring_time_range
+    to_ts = datetime.now() + calendar_monitoring_time_range
+    recurring_events = recurring_ical_events.of(calendar)
+    # protected function will be published in next release of library:
+    events = recurring_events._occurrences_between(start=from_ts, end=to_ts)
 
     schedules = list()
     for event in events:
         parent_event = event.as_component(keep_recurrence_attributes=True)
 
-        schedule_id = event.id.to_string()
-        schedule_name = parent_event.summary or 'Scheduled Downtime'
-        schedule_description = parent_event.description or ''
-
-        if len(target_event_titles) > 0 and parent_event.summary not in target_event_titles:
-            log.debug(f'Event {event.id} is skipped.')
+        if len(target_event_titles) > 0 and parent_event.get('summary') not in target_event_titles:
+            log.debug(
+                f'Event {event.id} is skipped because its title {parent_event.get("summary")} is not in the '
+                f'specified target set {target_event_titles}.'
+            )
             continue
+
+        schedule_id = event.id.to_string()
+        schedule_name = parent_event.get('summary', 'Scheduled Downtime')
+        schedule_description = parent_event.get('description', '')
 
         try:
             components = json.loads(schedule_description)

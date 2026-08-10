@@ -81,7 +81,7 @@ def clean_schedules(prune: bool, schedule_ids: list[int], cachet_api: CachetApi,
     unprocessed_schedule_ids = schedule_ids_on_server.difference(schedule_ids)
 
     cachet_id_stmt = select(ScheduleResolver.cachet_id).where(ScheduleResolver.cachet_id.in_(unprocessed_schedule_ids))
-    known_schedule_ids = db_session.scalars(cachet_id_stmt).all()
+    known_schedule_ids = list(db_session.scalars(cachet_id_stmt).all())
 
     if len(known_schedule_ids) > 0:
         if prune:

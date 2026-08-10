@@ -17,9 +17,12 @@ log = logging.getLogger(__name__)
 @asynccontextmanager
 async def configure_dependencies(the_app: FastAPI):
     log.debug('Configuring API')
+
+    # Reading settings from .env file
+    # noinspection argument-list
     settings = AdapterSettings()
 
-    the_app.state.cachet_api = CachetApi(base_url=settings.cachet_api_url, token=settings.cachet_token)
+    the_app.state.cachet_api = CachetApi(base_url=str(settings.cachet_api_url), token=settings.cachet_token)
 
     sqlite_url = f'sqlite:///{settings.sqlite_file}'
 
@@ -43,7 +46,7 @@ app = FastAPI(
     docs_url='/docs',
     redoc_url='/redoc',
 )
-app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(exc_class_or_status_code=RequestValidationError, handler=validation_exception_handler)
 
 app.include_router(health.router)
 app.include_router(adapt.router)
@@ -52,6 +55,8 @@ app.include_router(component_mapping.router)
 
 
 def main():
+    # Reading settings from .env file
+    # noinspection argument-list
     settings = AdapterSettings()
     logging.basicConfig(level=settings.log_level.upper())
     uvicorn.run(

@@ -14,9 +14,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog='Load Components', description='Load a JSON file of groups and componentes into Cachet'
     )
-    parser.add_argument(
-        '--component-file', type=argparse.FileType('r'), dest='component_file', default='data/components.json'
-    )
+    parser.add_argument('--component-file', dest='component_file', default='data/components.json')
     parser.add_argument(
         '--prune',
         action='store_true',
@@ -85,11 +83,14 @@ def load_components(api: CachetApi, data: ComponentData, prune: bool = False) ->
 
 def main() -> None:
     args = parse_args()
-    raw_data = json.load(args.component_file)
+    with open(args.component_file, 'r') as f:
+        raw_data = json.load(f)
     component_data = ComponentData(raw_data)
 
+    # Reading settings from .env file
+    # noinspection argument-list
     settings = AdapterSettings()
-    api = CachetApi(base_url=settings.cachet_api_url, token=settings.cachet_token)
+    api = CachetApi(base_url=str(settings.cachet_api_url), token=settings.cachet_token)
 
     load_components(api=api, data=component_data, prune=args.prune)
 

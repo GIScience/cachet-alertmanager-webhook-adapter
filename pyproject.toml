@@ -22,7 +22,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pre-commit>=4.4.0",
-    { include-group = "test" }
+    { include-group = "test" },
 ]
 test = [
     "pytest>=9.0.1",
