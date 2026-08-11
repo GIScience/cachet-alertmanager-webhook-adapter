@@ -80,7 +80,6 @@ def test_adapt_request_without_annotations(mocked_client, responses):
     cachet_request = {
         'name': 'Component a experiences issues',
         'status': 0,
-        'message': 'Experiencing issues',
         'visible': True,
         'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
@@ -325,28 +324,22 @@ def test_adapt_custom_tag_overwrites_job_name(mocked_client, responses):
 
 
 @pytest.mark.parametrize(
-    'mode,dependent_name,dependent_message,supplier_name,supplier_message',
+    'mode,dependent,supplier',
     [
         (
             OverrideMode.NONE,
-            'title that might be forwarded',
-            'summary that might be forwarded',
-            'title that might be forwarded',
-            'summary that might be forwarded',
+            {'name': 'title that might be forwarded', 'message': 'summary that might be forwarded'},
+            {'name': 'title that might be forwarded', 'message': 'summary that might be forwarded'},
         ),
         (
             OverrideMode.SUPPLIER,
-            'title that might be forwarded',
-            'summary that might be forwarded',
-            'A required downstream component experiences issues',
-            'Experiencing issues',
+            {'name': 'title that might be forwarded', 'message': 'summary that might be forwarded'},
+            {'name': 'A required component experiences issues'},
         ),
         (
             OverrideMode.ALL,
-            'Component a experiences issues',
-            'Experiencing issues',
-            'A required downstream component experiences issues',
-            'Experiencing issues',
+            {'name': 'Component a experiences issues'},
+            {'name': 'A required component experiences issues'},
         ),
     ],
 )
@@ -356,10 +349,8 @@ def test_adapt_override(
     responses,
     load_component_chain,
     mode,
-    dependent_name,
-    dependent_message,
-    supplier_name,
-    supplier_message,
+    dependent,
+    supplier,
 ):
     app.state.cachet_api = mocked_api
     app.state.db_engine = database
@@ -379,19 +370,17 @@ def test_adapt_override(
         json={'data': []},
     )
 
-    cachet_request_dependent = {'name': dependent_name, 'message': dependent_message}
     cachet_response_dependent = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
-        match=[matchers.json_params_matcher(cachet_request_dependent, strict_match=False)],
+        match=[matchers.json_params_matcher(dependent, strict_match=False)],
         json=cachet_response_dependent,
     )
 
-    cachet_request_supplier = {'name': supplier_name, 'message': supplier_message}
     cachet_response_supplier = {'data': {'id': '31', 'attributes': {'status': {'value': 0}}}}
     responses.post(
         'http://test-cachet/api/incidents',
-        match=[matchers.json_params_matcher(cachet_request_supplier, strict_match=False)],
+        match=[matchers.json_params_matcher(supplier, strict_match=False)],
         json=cachet_response_supplier,
     )
 
@@ -627,9 +616,8 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component(
     )
 
     cachet_request = {
-        'name': 'A required downstream component experiences issues',
+        'name': 'A required component experiences issues',
         'status': 0,
-        'message': 'Experiencing issues',
         'visible': True,
         'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
@@ -734,9 +722,8 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component_in_grou
     )
 
     cachet_request = {
-        'name': 'A required downstream component experiences issues',
+        'name': 'A required component experiences issues',
         'status': 0,
-        'message': 'Experiencing issues',
         'visible': True,
         'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
@@ -779,9 +766,8 @@ def test_adapt_does_create_incident_without_linked_components_if_forced(mocked_c
     )
 
     cachet_request = {
-        'name': 'A required downstream component experiences issues',
+        'name': 'A required component experiences issues',
         'status': 0,
-        'message': 'Experiencing issues',
         'visible': True,
         'occurred_at': '2025-11-20 15:54:41',
         'components': [],

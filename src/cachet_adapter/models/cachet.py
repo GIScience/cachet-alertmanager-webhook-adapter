@@ -57,7 +57,7 @@ class IncidentComponent(BaseModel, frozen=True):
 class Incident(BaseModel):
     name: Annotated[str, Field(max_length=255)]
     status: Optional[IncidentStatus] = None
-    message: CachetStr
+    message: Optional[CachetStr]
     visible: bool = False
     occurred_at: Optional[CachetDateTime] = None
     components: Optional[list[IncidentComponent]] = None

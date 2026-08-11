@@ -162,12 +162,12 @@ def extract_name_and_description(
     alert_component_name: str,
     message_override: OverrideMode,
     top_level_component_incident: bool,
-) -> tuple[str, str]:
+) -> tuple[str, Optional[str]]:
     if top_level_component_incident:
         incident_name = f'Component {alert_component_name} experiences issues'
     else:
-        incident_name = 'A required downstream component experiences issues'
-    incident_description = 'Experiencing issues'
+        incident_name = 'A required component experiences issues'
+    incident_description = None
 
     match message_override:
         case OverrideMode.ALL:
