@@ -37,6 +37,12 @@ log = logging.getLogger(__name__)
 ADAPT_ROUTE = '/adapt'
 router = APIRouter(prefix=ADAPT_ROUTE)
 
+TOP_LEVEL_INCIDENT_NAME = '{component} is experiencing issues'
+TOP_LEVEL_INCIDENT_MESSAGE = 'The service may be degraded or unavailable until the issue is resolved.'
+
+DOWNSTREAM_INCIDENT_NAME = 'A dependency is experiencing issues'
+DOWNSTREAM_INCIDENT_MESSAGE = 'This service may be degraded or unavailable until the upstream issue is resolved.'
+
 
 @router.post(
     path='',
@@ -162,24 +168,25 @@ def extract_name_and_description(
     alert_component_name: str,
     message_override: OverrideMode,
     top_level_component_incident: bool,
-) -> tuple[str, Optional[str]]:
+) -> tuple[str, str]:
     if top_level_component_incident:
-        incident_name = f'Component {alert_component_name} experiences issues'
+        incident_name = TOP_LEVEL_INCIDENT_NAME.format(component=alert_component_name)
+        incident_description = TOP_LEVEL_INCIDENT_MESSAGE
     else:
-        incident_name = 'A required component experiences issues'
-    incident_description = None
+        incident_name = DOWNSTREAM_INCIDENT_NAME
+        incident_description = DOWNSTREAM_INCIDENT_MESSAGE
 
     match message_override:
         case OverrideMode.ALL:
             pass
         case OverrideMode.SUPPLIER:
             if top_level_component_incident:
-                incident_name = alert.annotations.title or f'Component {alert_component_name} experiences issues'
+                incident_name = alert.annotations.title or incident_name
                 incident_description = (
                     alert.annotations.summary or alert.annotations.description or incident_description
                 )
         case OverrideMode.NONE:
-            incident_name = alert.annotations.title or f'Component {alert_component_name} experiences issues'
+            incident_name = alert.annotations.title or incident_name
             incident_description = alert.annotations.summary or alert.annotations.description or incident_description
         case _:
             raise NotImplementedError(f'Mode {message_override} not implemented.')

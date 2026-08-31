@@ -41,7 +41,7 @@ class CachetIdObject(BaseModel):
 
 
 class BaseComponent(BaseModel):
-    name: str
+    name: str  # Required by the Cachet API
     description: Optional[str] = None
     link: Optional[HttpUrl] = None
     status: ComponentStatus = ComponentStatus.OPERATIONAL
@@ -57,9 +57,9 @@ class IncidentComponent(BaseModel, frozen=True):
 
 
 class Incident(BaseModel):
-    name: Annotated[str, Field(max_length=255)]
-    status: Optional[IncidentStatus] = None
-    message: Optional[CachetStr]
+    name: Annotated[str, Field(max_length=255)]  # Required by the Cachet API
+    status: Optional[IncidentStatus] = None  # Required by the Cachet API
+    message: CachetStr  # Required by the Cachet API
     visible: bool = False
     occurred_at: Optional[CachetDateTime] = None
     components: Optional[list[IncidentComponent]] = None
@@ -112,7 +112,7 @@ class CachetComponentResponseData(BaseModel):
 
 
 class CachetGroupAttributes(BaseModel):
-    name: str
+    name: str  # Required by the Cachet API
     visible: bool = True
     collapsed: int = CollapseStates.COLLAPSED_UNLESS_INCIDENT
 
@@ -141,8 +141,8 @@ class CachetGroupCreateResponse(BaseModel):
 
 
 class CachetSchedule(BaseModel):
-    name: CachetStr
-    message: CachetStr
-    scheduled_at: CachetDateTime
+    name: CachetStr  # Required by the Cachet API
+    message: CachetStr  # Required by the Cachet API
+    scheduled_at: CachetDateTime  # Required by the Cachet API
     completed_at: CachetDateTime
     components: Optional[list[IncidentComponent]]

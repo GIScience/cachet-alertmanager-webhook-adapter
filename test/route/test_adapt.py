@@ -78,8 +78,9 @@ def test_adapt_request_without_annotations(mocked_client, responses):
     )
 
     cachet_request = {
-        'name': 'Component a experiences issues',
+        'name': 'a is experiencing issues',
         'status': 0,
+        'message': 'The service may be degraded or unavailable until the issue is resolved.',
         'visible': True,
         'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
@@ -334,12 +335,21 @@ def test_adapt_custom_tag_overwrites_job_name(mocked_client, responses):
         (
             OverrideMode.SUPPLIER,
             {'name': 'title that might be forwarded', 'message': 'summary that might be forwarded'},
-            {'name': 'A required component experiences issues'},
+            {
+                'name': 'A dependency is experiencing issues',
+                'message': 'This service may be degraded or unavailable until the upstream issue is resolved.',
+            },
         ),
         (
             OverrideMode.ALL,
-            {'name': 'Component a experiences issues'},
-            {'name': 'A required component experiences issues'},
+            {
+                'name': 'a is experiencing issues',
+                'message': 'The service may be degraded or unavailable until the issue is resolved.',
+            },
+            {
+                'name': 'A dependency is experiencing issues',
+                'message': 'This service may be degraded or unavailable until the upstream issue is resolved.',
+            },
         ),
     ],
 )
@@ -616,8 +626,9 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component(
     )
 
     cachet_request = {
-        'name': 'A required component experiences issues',
+        'name': 'A dependency is experiencing issues',
         'status': 0,
+        'message': 'This service may be degraded or unavailable until the upstream issue is resolved.',
         'visible': True,
         'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
@@ -722,8 +733,9 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component_in_grou
     )
 
     cachet_request = {
-        'name': 'A required component experiences issues',
+        'name': 'A dependency is experiencing issues',
         'status': 0,
+        'message': 'This service may be degraded or unavailable until the upstream issue is resolved.',
         'visible': True,
         'occurred_at': '2025-11-20 15:54:41',
         'components': [{'id': 1, 'status': 4}],
@@ -766,8 +778,9 @@ def test_adapt_does_create_incident_without_linked_components_if_forced(mocked_c
     )
 
     cachet_request = {
-        'name': 'A required component experiences issues',
+        'name': 'A dependency is experiencing issues',
         'status': 0,
+        'message': 'This service may be degraded or unavailable until the upstream issue is resolved.',
         'visible': True,
         'occurred_at': '2025-11-20 15:54:41',
         'components': [],
