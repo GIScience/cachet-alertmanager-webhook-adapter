@@ -98,8 +98,8 @@ It loads scheduled maintenances from an ICS source (file or URL).
 uv run load-schedules <adapter-url> --file /path/to/file.ics
 ```
 
-To link components to a scheduled downtime, the description can contain a JSON object specifying the affected components
-like so:
+To link components to a scheduled maintenance event, the description can contain a JSON object specifying the affected
+components like so:
 
 ```ics
 BEGIN:VCALENDAR

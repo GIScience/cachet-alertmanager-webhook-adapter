@@ -16,7 +16,7 @@ def test_load_schedules(responses, frozen_time):
                     {
                         'id': 'VEVENT##2026-06-01T12:00:00+02:00#8906ea5d-d770-4b62-956a-5c73f4e654f1',
                         'name': 'Update',
-                        'message': 'A scheduled downtime',
+                        'message': 'Maintenance scheduled, expect reduced availability',
                         'scheduled_at': '2026-06-01T10:00:00Z',
                         'completed_at': '2026-06-01T10:30:00Z',
                         'components': {'': ['a']},
@@ -24,7 +24,7 @@ def test_load_schedules(responses, frozen_time):
                     {
                         'id': 'VEVENT##2026-06-01T12:00:00+02:00#78d7aefe-f7df-4154-8415-6cabc591d584',
                         'name': 'Update',
-                        'message': 'A scheduled downtime',
+                        'message': 'Maintenance scheduled, expect reduced availability',
                         'scheduled_at': '2026-06-01T10:00:00Z',
                         'completed_at': '2026-06-01T10:30:00Z',
                         'components': None,
@@ -49,7 +49,7 @@ def test_load_schedules_for_all_components(responses, frozen_time):
                     {
                         'id': 'VEVENT##2026-06-01T12:00:00+02:00#8906ea5d-d770-4b62-956a-5c73f4e654f1',
                         'name': 'Update',
-                        'message': 'A scheduled downtime',
+                        'message': 'Maintenance scheduled, expect reduced availability',
                         'scheduled_at': '2026-06-01T10:00:00Z',
                         'completed_at': '2026-06-01T10:30:00Z',
                         'components': 'all',
@@ -74,7 +74,7 @@ def test_load_recurring_events(responses, frozen_time):
                     {
                         'id': 'VEVENT##2026-06-01T12:00:00+02:00#040000008200E00074C5B7101A82E008000000001761DBD484F9DC01000000000000000010000000E37C66B00CA51447A386C62D5CEEE1F8',
                         'name': 'Update',
-                        'message': 'A scheduled downtime',
+                        'message': 'Maintenance scheduled, expect reduced availability',
                         'scheduled_at': '2026-06-01T10:00:00Z',
                         'completed_at': '2026-06-01T10:30:00Z',
                         'components': None,
@@ -82,7 +82,7 @@ def test_load_recurring_events(responses, frozen_time):
                     {
                         'id': 'VEVENT##2026-06-08T12:00:00+02:00#040000008200E00074C5B7101A82E008000000001761DBD484F9DC01000000000000000010000000E37C66B00CA51447A386C62D5CEEE1F8',
                         'name': 'Update',
-                        'message': 'A scheduled downtime',
+                        'message': 'Maintenance scheduled, expect reduced availability',
                         'scheduled_at': '2026-06-08T10:00:00Z',
                         'completed_at': '2026-06-08T10:30:00Z',
                         'components': None,
@@ -90,7 +90,7 @@ def test_load_recurring_events(responses, frozen_time):
                     {
                         'id': 'VEVENT##2026-06-15T12:00:00+02:00#040000008200E00074C5B7101A82E008000000001761DBD484F9DC01000000000000000010000000E37C66B00CA51447A386C62D5CEEE1F8',
                         'name': 'Update',
-                        'message': 'A scheduled downtime',
+                        'message': 'Maintenance scheduled, expect reduced availability',
                         'scheduled_at': '2026-06-15T10:00:00Z',
                         'completed_at': '2026-06-15T10:30:00Z',
                         'components': None,
@@ -120,7 +120,7 @@ def test_load_adapted_recurring_events(responses, frozen_time):
                     {
                         'id': 'VEVENT##2026-06-01T12:00:00+02:00#040000008200E00074C5B7101A82E008000000001761DBD484F9DC01000000000000000010000000E37C66B00CA51447A386C62D5CEEE1F8',
                         'name': 'Update',
-                        'message': 'A scheduled downtime',
+                        'message': 'Maintenance scheduled, expect reduced availability',
                         'scheduled_at': '2026-06-01T10:00:00Z',
                         'completed_at': '2026-06-01T10:30:00Z',
                         'components': None,
@@ -128,7 +128,7 @@ def test_load_adapted_recurring_events(responses, frozen_time):
                     {
                         'id': 'VEVENT##2026-06-08T12:00:00+02:00#040000008200E00074C5B7101A82E008000000001761DBD484F9DC01000000000000000010000000E37C66B00CA51447A386C62D5CEEE1F8',
                         'name': 'Update',
-                        'message': 'A scheduled downtime',
+                        'message': 'Maintenance scheduled, expect reduced availability',
                         'scheduled_at': '2026-06-08T10:00:00Z',
                         'completed_at': '2026-06-08T10:30:00Z',
                         'components': None,
@@ -136,7 +136,7 @@ def test_load_adapted_recurring_events(responses, frozen_time):
                     {
                         'id': 'VEVENT#2026-06-15T10:00:00#2026-06-16T12:00:00+02:00#040000008200E00074C5B7101A82E008000000001761DBD484F9DC01000000000000000010000000E37C66B00CA51447A386C62D5CEEE1F8',
                         'name': 'Update',
-                        'message': 'A scheduled downtime',
+                        'message': 'Maintenance scheduled, expect reduced availability',
                         'scheduled_at': '2026-06-16T10:00:00Z',
                         'completed_at': '2026-06-16T10:30:00Z',
                         'components': None,

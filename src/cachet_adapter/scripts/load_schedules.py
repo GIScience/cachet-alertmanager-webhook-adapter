@@ -111,7 +111,7 @@ def load_schedules(
             continue
 
         schedule_id = event.id.to_string()
-        schedule_name = parent_event.get('summary', 'Scheduled Downtime')
+        schedule_name = parent_event.get('summary', 'Scheduled Maintenance Event')
         schedule_description = parent_event.get('description', '')
 
         try:
@@ -127,7 +127,7 @@ def load_schedules(
                     f''
                     f'for event {event.id.to_string()} does not contain a valid '
                     f'component-set in JSON format or the keyword to link all components: {all_components_keyword}.'
-                    'Creating a scheduled downtime without linked components.'
+                    'Creating a scheduled maintenance event without linked components.'
                 )
                 components = None
 

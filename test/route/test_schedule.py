@@ -25,7 +25,7 @@ def create_default_schedule(responses, mocked_client) -> Response:
                     'message': 'Updates',
                     'scheduled_at': '2025-11-07 05:31:56',
                     'completed_at': '3026-11-07 06:31:56',
-                    'components': [{'id': 1, 'status': 4}],
+                    'components': [{'id': 1, 'status': 6}],
                 }
             )
         ],
@@ -120,7 +120,7 @@ def test_create_schedule_with_all_component(mocked_client, responses):
                     'message': 'Updates',
                     'scheduled_at': '2025-11-07 05:31:56',
                     'completed_at': '3026-11-07 06:31:56',
-                    'components': [{'id': 2, 'status': 4}, {'id': 1, 'status': 4}],
+                    'components': [{'id': 1, 'status': 6}, {'id': 2, 'status': 6}],
                 }
             )
         ],
@@ -159,7 +159,7 @@ def test_update_known_schedule(mocked_client, responses):
                 {
                     'scheduled_at': '2026-11-07 05:31:56',
                     'completed_at': '2027-11-07 06:31:56',
-                    'components': [{'id': 1, 'status': 4}],
+                    'components': [{'id': 1, 'status': 6}],
                 }
             )
         ],
@@ -279,7 +279,7 @@ def test_sync_deleted_schedule(mocked_client, responses):
                     'message': 'Updates',
                     'scheduled_at': '2025-11-07 05:31:56',
                     'completed_at': '3026-11-07 06:31:56',
-                    'components': [{'id': 1, 'status': 4}],
+                    'components': [{'id': 1, 'status': 6}],
                 }
             )
         ],

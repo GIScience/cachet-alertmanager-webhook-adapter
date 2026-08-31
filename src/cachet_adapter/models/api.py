@@ -13,7 +13,7 @@ class AdaptResponse(BaseModel):
 class ScheduledIncident(BaseModel):
     id: str
     name: str
-    message: str = 'A scheduled downtime'
+    message: str = 'Maintenance scheduled, expect reduced availability'
     scheduled_at: UtcDateTime
     completed_at: UtcDateTime
     components: Optional[dict[str, list[str]]] | Literal['all']

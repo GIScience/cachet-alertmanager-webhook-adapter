@@ -53,7 +53,10 @@ def process_schedule(
     schedule_id = get_schedule_id(db_session=db_session, schedule_id=scheduled_incident.id)
 
     linked_components = process_linked_components(
-        cachet_api=cachet_api, db_session=db_session, components=scheduled_incident.components
+        cachet_api=cachet_api,
+        db_session=db_session,
+        components=scheduled_incident.components,
+        status=ComponentStatus.UNDER_MAINTENANCE,
     )
 
     cachet_schedule = CachetSchedule(

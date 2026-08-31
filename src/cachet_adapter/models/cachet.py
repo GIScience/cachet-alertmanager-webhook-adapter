@@ -18,6 +18,8 @@ class ComponentStatus(IntEnum):
     PERFORMANCE_ISSUES = 2
     PARTIAL_OUTAGE = 3
     MAJOR_OUTAGE = 4
+    UNKNOWN = 5
+    UNDER_MAINTENANCE = 6
 
 
 class IncidentStatus(IntEnum):
