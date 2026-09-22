@@ -65,6 +65,11 @@ class Incident(BaseModel):
     components: Optional[list[IncidentComponent]] = None
 
 
+class IncidentUpdate(BaseModel):
+    status: IncidentStatus  # Required by the Cachet API
+    message: CachetStr  # Required by the Cachet API
+
+
 class CachetStatusValue(BaseModel):
     value: IncidentStatus
 
@@ -79,6 +84,10 @@ class CachetIncidentData(CachetIdObject):
 
 class CachetIncidentResponse(BaseModel):
     data: CachetIncidentData
+
+
+class CachetIncidentUpdateResponse(BaseModel):
+    data: CachetIdObject
 
 
 class CachetScheduleResponse(BaseModel):

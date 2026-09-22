@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Optional
 
@@ -10,11 +11,12 @@ from cachet_adapter.models.cachet import (
     CachetGroupCreateResponse,
     CachetGroupQueryResponse,
     CachetIncidentResponse,
+    CachetIncidentUpdateResponse,
     CachetRelationshipComponent,
     CachetSchedule,
     CachetScheduleResponse,
     Incident,
-    IncidentStatus,
+    IncidentUpdate,
 )
 from cachet_adapter.models.database import NONE_GROUP_STR
 from cachet_adapter.utils.http_connection import HttpConnection
@@ -110,9 +112,15 @@ class CachetApi(HttpConnection):
         incident_id = cachet_response.data.id
         return incident_id
 
-    def update_incident(self, incident_id: int, new_status: IncidentStatus) -> None:
-        response = self.session.put(f'{self.base_url}/incidents/{incident_id}', json={'status': new_status})
+    def create_incident_update(self, incident_id: int, incident_update: IncidentUpdate) -> int:
+        update_data = incident_update.model_dump(mode='json')
+        log.debug(f'Creating update for incident {incident_id} {json.dumps(update_data, indent=4)}')
+        response = self.session.post(f'{self.base_url}/incidents/{incident_id}/updates', json=update_data)
         response.raise_for_status()
+        response_json = response.json()
+        cachet_response = CachetIncidentUpdateResponse.model_validate(response_json)
+        update_id = cachet_response.data.id
+        return update_id
 
     def list_schedule_ids(self) -> set[int]:
         response = self.session.get(f'{self.base_url}/schedules')

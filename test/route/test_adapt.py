@@ -995,8 +995,8 @@ def test_adapt_updates_existing_incident_on_same_fingerprint(mocked_client, resp
         'http://test-cachet/api/incidents/30',
         json={'data': {'id': '30', 'attributes': {'status': {'value': 0}}}},
     )
-    responses.put(
-        'http://test-cachet/api/incidents/30',
+    responses.post(
+        'http://test-cachet/api/incidents/30/updates',
         match=[
             matchers.header_matcher(
                 {
@@ -1005,9 +1005,9 @@ def test_adapt_updates_existing_incident_on_same_fingerprint(mocked_client, resp
                     'Accept': 'application/json',
                 }
             ),
-            matchers.json_params_matcher({'status': 4}),
+            matchers.json_params_matcher({'status': 4, 'message': 'The issue has been resolved.'}),
         ],
-        json={'data': {'id': '30', 'attributes': {'status': {'value': 4}}}},
+        json={'data': {'id': '7'}},
     )
 
     alert = {
@@ -1079,13 +1079,13 @@ def test_adapt_creates_new_incident_if_previous_fixed(mocked_client, responses):
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
-    responses.put(
-        'http://test-cachet/api/incidents/30',
+    responses.post(
+        'http://test-cachet/api/incidents/30/updates',
         match=[
             matchers.header_matcher(cachet_header),
-            matchers.json_params_matcher({'status': 4}),
+            matchers.json_params_matcher({'status': 4, 'message': 'The issue has been resolved.'}),
         ],
-        json={'data': {'id': '30', 'attributes': {'status': {'value': 4}}}},
+        json={'data': {'id': '7'}},
     )
     alert = {
         'status': 'resolved',
@@ -1365,12 +1365,12 @@ def test_adapt_pulled_incident_known_suppressed(mocked_client, responses):
         'http://test-cachet/api/incidents/30',
         json={'data': {'id': '30', 'attributes': {'status': {'value': 0}}}},
     )
-    responses.put(
-        'http://test-cachet/api/incidents/30',
+    responses.post(
+        'http://test-cachet/api/incidents/30/updates',
         match=[
-            matchers.json_params_matcher({'status': 1}),
+            matchers.json_params_matcher({'status': 1, 'message': 'The issue is being investigated.'}),
         ],
-        json={'data': {'id': '30', 'attributes': {'status': {'value': 1}}}},
+        json={'data': {'id': '7'}},
     )
 
     alertmanager_request = [
@@ -1400,12 +1400,12 @@ def test_adapt_prune_known_incident_resolved_while_suppressed(mocked_client, res
     _, _ = create_default_incident(responses=responses, mocked_client=mocked_client)
 
     # Now the actual test: update it as fixed as it is no longer present in the Alertmanager API
-    responses.put(
-        'http://test-cachet/api/incidents/30',
+    responses.post(
+        'http://test-cachet/api/incidents/30/updates',
         match=[
-            matchers.json_params_matcher({'status': 4}),
+            matchers.json_params_matcher({'status': 4, 'message': 'The issue has been resolved.'}),
         ],
-        json={'data': {'id': '30', 'attributes': {'status': {'value': 4}}}},
+        json={'data': {'id': '7'}},
     )
 
     alertmanager_request = []

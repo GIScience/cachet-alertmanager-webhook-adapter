@@ -20,6 +20,7 @@ from cachet_adapter.models.cachet import (
     Incident,
     IncidentComponent,
     IncidentStatus,
+    IncidentUpdate,
 )
 from cachet_adapter.models.database import NONE_GROUP_STR
 from cachet_adapter.settings import OverrideMode
@@ -42,6 +43,11 @@ TOP_LEVEL_INCIDENT_MESSAGE = 'The service may be degraded or unavailable until t
 
 SUPPLIER_INCIDENT_NAME = 'A dependency is experiencing issues'
 SUPPLIER_INCIDENT_MESSAGE = 'This service may be degraded or unavailable until the upstream issue is resolved.'
+
+INCIDENT_UPDATE_MESSAGES = {
+    IncidentStatus.INVESTIGATING: 'The issue is being investigated.',
+    IncidentStatus.FIXED: 'The issue has been resolved.',
+}
 
 
 @router.post(
@@ -76,7 +82,9 @@ async def adapt(
         if prune:
             resolved_incidents = get_additional_known_incidents(db_session=db_session, incident_ids=incident_ids)
             for incident_id in resolved_incidents:
-                cachet_api.update_incident(incident_id=incident_id, new_status=IncidentStatus.FIXED)
+                create_incident_update(
+                    cachet_api=cachet_api, incident_id=incident_id, incident_status=IncidentStatus.FIXED
+                )
                 delete_incident(db_session=db_session, incident_id=incident_id)
                 incident_ids.append(incident_id)
                 log.debug(f'Pruned incident {incident_id} because its alert is no longer firing')
@@ -219,7 +227,7 @@ def handle_known_incident(
     existing_incident = cachet_api.get_incident(incident_id=incident_id)
     existing_status = existing_incident.data.attributes.status.value
     if existing_status < incident_status:
-        cachet_api.update_incident(incident_id=incident_id, new_status=incident_status)
+        create_incident_update(cachet_api=cachet_api, incident_id=incident_id, incident_status=incident_status)
         log.debug(f'Updated incident {incident_id}: {IncidentStatus(existing_status).name} -> {incident_status.name}')
     elif existing_status == IncidentStatus.FIXED and incident_status != IncidentStatus.FIXED:
         log.warning(f'The incident {incident_id} was marked as fixed in cachet but is still firing!')
@@ -227,6 +235,12 @@ def handle_known_incident(
     if incident_status == IncidentStatus.FIXED:
         delete_incident(db_session=db_session, incident_id=incident_id)
         log.debug(f'Incident {incident_id} is fixed, removed it from the resolver database')
+
+
+def create_incident_update(cachet_api: CachetApi, incident_id: int, incident_status: IncidentStatus) -> int:
+    message = INCIDENT_UPDATE_MESSAGES.get(incident_status, f'Status changed to {incident_status.name.lower()}.')
+    incident_update = IncidentUpdate(status=incident_status, message=message)
+    return cachet_api.create_incident_update(incident_id=incident_id, incident_update=incident_update)
 
 
 def extract_incident_status(status: AlertmanagerWebhookStatus | AlertmanagerStatusObject) -> IncidentStatus:
