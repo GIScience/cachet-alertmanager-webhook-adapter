@@ -14,7 +14,8 @@ It maintains a component dependency graph to automatically propagate status chan
 
 ## Similar Projects
 
-There are existing tools that basically do the same thing but are >5y unmaintained:
+There are existing tools that basically do the same thing but are unmaintained,
+and/or work only with the previous version of Cachet (v2):
 
 - https://github.com/gregdhill/prometheus-cachet
 - https://github.com/oxyno-zeta/prometheus-cachethq
@@ -34,19 +35,31 @@ Then fill in the required parameters.
 
 The adapter has the following environment variables:
 
-| Variable         | Required | Default                 | Description                                                        |
-|------------------|----------|-------------------------|--------------------------------------------------------------------|
-| `CACHET_API_URL` | Yes      | -                       | URL to your Cachet API (e.g., `https://status.example.com/api/v1`) |
-| `CACHET_TOKEN`   | Yes      | -                       | Bearer token for Cachet authentication                             |
-| `PORT`           | No       | `8002`                  | Server port                                                        |
-| `SQLITE_FILE`    | No       | `cachet_adapter.sqlite` | Path to the SQLite database file for storing mappings              |
+| Variable           | Required | Default                 | Description                                                                 |
+|--------------------|----------|-------------------------|-----------------------------------------------------------------------------|
+| `CACHET_API_URL`   | Yes      | -                       | URL to your Cachet API (e.g., `https://status.example.com/api/v1`)          |
+| `CACHET_TOKEN`     | Yes      | -                       | Bearer token for Cachet authentication                                      |
+| `PORT`             | No       | `8002`                  | Server port                                                                 |
+| `MESSAGE_OVERRIDE` | No       | `supplier`              | Whether to replace alert texts with generic ones: `all`, `supplier`, `none` |
+| `LOG_LEVEL`        | No       | `INFO`                  | Log level                                                                   |
+| `SQLITE_FILE`      | No       | `cachet_adapter.sqlite` | Path to the SQLite database file for storing mappings                       |
 
-#### Setup
+## Run
+
+Now start the adapter using `docker compose up`.
+Use the `-d` flag to start it in the background.
+
+The adapter will be available at http://localhost:8002.
+The full, interactive API documentation is served at http://localhost:8002/docs.
+
+We suggest you use a `docker-compose.override.yml` file to adapt the compose file to your needs.
+
+## Loading Data
 
 Running the adapter on a bare setup works but is not very useful.
 To quickly load your custom data, we provide helper scripts.
 
-##### load-components
+### load-components
 
 It reads in a JSON file and creates the specified components in Cachet.
 
@@ -72,7 +85,7 @@ Use `--prune` to delete any groups and components on Cachet that are not specifi
 This brings Cachet fully in sync with the file. Note that renaming a group or component is treated as a deletion
 and recreation, thereby losing existing linked incidents. To rename, do so manually in the Cachet UI instead.
 
-##### load-dependencies
+### load-dependencies
 
 It loads a list of dependencies into the adapter.
 
@@ -84,37 +97,50 @@ The dependency file must have the format
 
 ```csv
 from_group,from_component,to_group,to_component,relationship
-<from_group>,<from_component>,<to_group>,<to_component>,<optional or required>
+<from_group>,<from_component>,<to_group>,<to_component>,<requires or optional>
 ```
 
 Use `--prune` to delete any dependencies not specified in the file.
 The adapter will then be fully in sync with the file.
 
-##### load-schedules
+### load-schedules
 
 It loads scheduled maintenances from an ICS source (file or URL).
 
 ```shell
 uv run load-schedules <adapter-url> --file /path/to/file.ics
+# or
+uv run load-schedules <adapter-url> --url https://example.com/calendar.ics
 ```
 
-To link components to a scheduled maintenance event, the description can contain a JSON object specifying the affected
-components like so:
+To link components to a maintenance event, put a JSON object into the event description that maps group names to
+component names (same names as in `load-components`).
 
+In your calendar, the description would then look something like
+```
+{"infrastructure":["Primary Database"]}
+```
+generating the following ICS
 ```ics
-BEGIN:VCALENDAR
-PRODID:http://www.example.com/calendarapplication/
 BEGIN:VEVENT
 UID:3371b318-23a6-4621-b157-201e428c6e47
-SUMMARY:Update
-DESCRIPTION;ALTREP="data:text/html,%7B%22%22%3A%5B%22a%22%5D%7D":{"":["a"]}
-DTSTART;TZID=Europe/Berlin:20200910T220000
-DTEND;TZID=Europe/Berlin:20200919T215900
+SUMMARY:Database upgrade
+DESCRIPTION:{"infrastructure":["Primary Database"]}
+DTSTART;TZID=Europe/Berlin:20260910T220000
+DTEND;TZID=Europe/Berlin:20260910T235900
 END:VEVENT
-END:VCALENDAR
 ```
+Note, that the description can contain no additional information apart from the linked components JSON.
 
-##### sync-alerts
+Or you may simply use the keyword `[cachet:all]` to link every component.
+In this case the description can be normal text and must only contain that set of characters at any point.
+
+E.g. `We will update our services. Note for the system: [cachet:all]`
+
+Use `--event-titles` to only import events with specific titles, and `--prune` to
+delete schedules that are no longer in the calendar.
+
+### sync-alerts
 
 It pulls the current list of alerts from the Alertmanager and synchronises them with the CAWA.
 This script is necessary
@@ -126,92 +152,62 @@ It can also be used as a complete alternative to the webhook.
 uv run sync-alerts <adapter-url> --alertmanager-url <alertmanager-url>
 ```
 
-## Run
+## How Alerts Become Incidents
 
-Now start the adapter using `docker compose up`.
-Use the `-d` flag to start it in the background.
+When Alertmanager POSTs a webhook to `/adapt`, the adapter does the following for each alert:
 
-The adapter will be available at http://localhost:8002/docs.
+1. determines the affected component from the alert labels,
+2. walks the dependency graph to find all components that depend on it,
+3. creates one Cachet incident linking all affected components, with statuses based on the alert severity and the
+   dependency relationships.
 
-We suggest you use a `docker-compose.override.yml` file to adapt the compose file to your needs.
+Subsequent alerts with the same fingerprint and start time update the existing incident rather than creating
+duplicates.
+If neither the alerting component nor its dependent component exists in Cachet, no incident is created (unless a `force` flag is used).
 
----
-
-## API Reference
-
-### Alert Webhook Endpoint
-
-```http
-POST /adapt
-```
-
-Receives Alertmanager webhook payloads and creates/updates Cachet incidents.
-
-#### Request Body
-
-```json
-{
-  "alerts": [
-    {
-      "status": "firing",
-      "labels": {
-        "job": "my-service",
-        "severity": "critical"
-      },
-      "annotations": {
-        "title": "Service Unavailable",
-        "description": "The service is not responding to health checks."
-      },
-      "startsAt": "2025-01-27T10:30:00Z",
-      "fingerprint": "abc123unique"
-    }
-  ]
-}
-```
-
-#### Alert Labels
+### Alert Labels
 
 | Label                   | Required | Description                                                                  |
 |-------------------------|----------|------------------------------------------------------------------------------|
 | `job`                   | Yes      | Component name (used to match Cachet component)                              |
 | `cachet_group` or `org` | No       | Component group name (default: `''`, matches ungrouped components)           |
 | `cachet_component`      | No       | Override `job` with a custom component name                                  |
+| `cachet_incident_force` | No       | Create an incident even if no matching component exists (default: `false`)   |
 | `severity`              | No       | Alert severity: `critical`, `error`, `warning`, `info` (default: `critical`) |
 
-#### Severity Mapping
+### Severity Mapping
 
 | Alert Severity      | Cachet Component Status |
 |---------------------|-------------------------|
 | `critical`, `error` | Major Outage (4)        |
 | `warning`, `info`   | Partial Outage (3)      |
 
-#### Response
+| Alert State                     | Cachet Incident Status |
+|---------------------------------|------------------------|
+| `firing`                        | Reported               |
+| `suppressed` (sync-alerts only) | Investigating          |
+| `resolved`                      | Fixed                  |
 
-```json
-{
-  "incident_ids": [
-    42,
-    43
-  ]
-}
-```
+### Incident Texts
 
----
+The `MESSAGE_OVERRIDE` setting controls when an alert's own `title` and `summary`/`description` annotations are used,
+instead of the generic ones supplied by the adapter.
+
+- `all`: never, always use the generic texts
+- `supplier` (default): only if the alerting component itself is on Cachet; unlisted ones
+  (dependent components) keep the generic text
+- `none`: always, whenever the annotations are present
 
 ## Component Dependency Graph
 
 The adapter maintains a dependency graph that propagates status changes.
 When a component fails, all components that depend on it are automatically linked to the incident.
 
-### Concepts
-
 - **Components** belong to **groups** (default: `''`, for ungrouped components)
 - **Dependencies** are directional: "A depends on B" means A requires B
 - **Relationship types**:
     - `requires`: Hard dependency. If B has a major outage, A gets major outage status.
     - `optional`: Soft dependency. If B fails, A gets partial outage status.
-
-### Example Dependency Graph
 
 ```
 ┌─────────┐     requires     ┌─────────┐     optional     ┌───────┐
@@ -226,81 +222,17 @@ When a component fails, all components that depend on it are automatically linke
                             └──────────┘
 ```
 
-**Scenario 1: `database` fails (Major Outage)**
+If `database` fails with a major outage, `api` and `web-app` also get major outage status (`requires` all the way).
+If `cache` fails, `api` and `web-app` only get partial outage status.
 
-- `database` → Major Outage
-- `api` → Major Outage (requires database)
-- `web-app` → Major Outage (requires api)
-
-**Scenario 2: `cache` fails (Major Outage)**
-
-- `cache` → Major Outage
-- `api` → Partial Outage (optional dependency on cache)
-- `web-app` → Partial Outage (transitive through api)
-
----
-
-## Managing Dependencies
-
-### Create or Update a Dependency
-
-```http
-PUT /component-mapping
-Content-Type: application/json
-
-{
-  "from_component": "web-app",
-  "to_component": "api",
-  "relationship": "requires"
-}
-```
-
-Optional fields:
-
-- `from_group`: Source component group (default: `''`)
-- `to_group`: Target component group (default: `''`)
-
-**Response:** Returns all dependencies of the `from_component`.
-
-```json
-[
-  {
-    "from_group": "general",
-    "from_component": "web-app",
-    "to_group": "general",
-    "to_component": "api",
-    "relationship": "requires"
-  }
-]
-```
-
-**Note:** Circular dependencies are detected and rejected with a 400 error.
-
----
-
-### Query Dependencies
-
-```http
-GET /component-mapping
-```
-
-**Query Parameters:**
-
-| Parameter   | Type   | Description                                                       |
-|-------------|--------|-------------------------------------------------------------------|
-| `group`     | string | Filter by source group                                            |
-| `component` | string | Filter by source component                                        |
-| `recursive` | bool   | Include transitive dependencies                                   |
-| `upward`    | bool   | Query reverse direction (find dependents instead of dependencies) |
-
-**Examples:**
+Besides the [load-dependencies](#load-dependencies) script, the graph can be managed directly via the
+`/component-mapping` endpoint (see http://localhost:8002/docs for details):
 
 ```bash
-# Get all dependency mappings
-curl "http://localhost:8002/component-mapping"
-
-# Get direct dependencies of web-app
-curl "http://localhost:8002/component-mapping?group=general&component=web-app"
+# Create or update a dependency
+curl -X PUT "http://localhost:8002/component-mapping" \
+  -H "Content-Type: application/json" \
+  -d '{"from_component": "web-app", "to_component": "api", "relationship": "requires"}'
 
 # Get all dependencies (including transitive) of web-app
 curl "http://localhost:8002/component-mapping?group=general&component=web-app&recursive=true"
@@ -308,44 +240,11 @@ curl "http://localhost:8002/component-mapping?group=general&component=web-app&re
 # Find all components that depend on database
 curl "http://localhost:8002/component-mapping?component=database&upward=true"
 
-# Find all components that depend on database (including transitive dependents)
-curl "http://localhost:8002/component-mapping?group=general&component=database&recursive=true&upward=true"
+# Delete a dependency
+curl -X DELETE "http://localhost:8002/component-mapping?from_group=general&from_component=web-app&to_group=general&to_component=api"
 ```
 
-**Response with `recursive=true`:**
-
-```json
-[
-  {
-    "from_group": "general",
-    "from_component": "web-app",
-    "to_group": "general",
-    "to_component": "api",
-    "relationship": "requires",
-    "transitive": false
-  },
-  {
-    "from_group": "general",
-    "from_component": "web-app",
-    "to_group": "general",
-    "to_component": "database",
-    "relationship": "requires",
-    "transitive": true
-  }
-]
-```
-
----
-
-### Delete a Dependency
-
-```http
-DELETE /component-mapping?from_group=general&from_component=web-app&to_group=general&to_component=api
-```
-
-**Response:** Returns remaining dependencies of the `from_component`.
-
----
+Circular dependencies are detected and rejected with a 400 error.
 
 ## Alertmanager Configuration
 
@@ -400,27 +299,6 @@ If your Prometheus job names don't match Cachet component names, use the `cachet
     title: "Database Connection Failed"
     description: "Cannot connect to the primary database."
 ```
-
----
-
-## How It Works
-
-1. **Alert received**: Alertmanager POSTs a webhook to `/adapt`
-2. **Dependency resolution**: Walks the dependency graph upward to find all components that depend on the alerting
-   component
-3. **Component lookup**: Looks up the alerting component and all dependent components in Cachet
-4. **Status calculation**: Applies relationship rules to determine each component's status
-5. **Incident creation/update**: Creates a new incident or updates existing (tracked by alert fingerprint)
-
-### Incident Lifecycle
-
-- **Alert fires** (`status: "firing"`) → Creates incident with status `REPORTED`
-- **Alert resolves** (`status: "resolved"`) → Updates incident to status `FIXED`
-
-The adapter tracks alert fingerprints to incident IDs, so subsequent alerts with the same fingerprint update the
-existing incident rather than creating duplicates.
-
----
 
 ## Contributing
 
