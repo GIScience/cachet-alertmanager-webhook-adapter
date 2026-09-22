@@ -240,7 +240,7 @@ def handle_known_incident(
 def create_incident_update(cachet_api: CachetApi, incident_id: int, incident_status: IncidentStatus) -> int:
     message = INCIDENT_UPDATE_MESSAGES.get(incident_status, f'Status changed to {incident_status.name.lower()}.')
     incident_update = IncidentUpdate(status=incident_status, message=message)
-    return cachet_api.create_incident_update(incident_id=incident_id, incident_update=incident_update)
+    return cachet_api.post_incident_update(incident_id=incident_id, incident_update=incident_update)
 
 
 def extract_incident_status(status: AlertmanagerWebhookStatus | AlertmanagerStatusObject) -> IncidentStatus:

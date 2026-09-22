@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Optional
 
@@ -112,9 +111,9 @@ class CachetApi(HttpConnection):
         incident_id = cachet_response.data.id
         return incident_id
 
-    def create_incident_update(self, incident_id: int, incident_update: IncidentUpdate) -> int:
+    def post_incident_update(self, incident_id: int, incident_update: IncidentUpdate) -> int:
         update_data = incident_update.model_dump(mode='json')
-        log.debug(f'Creating update for incident {incident_id} {json.dumps(update_data, indent=4)}')
+        log.debug(f'Creating update for incident {incident_id}: {update_data}')
         response = self.session.post(f'{self.base_url}/incidents/{incident_id}/updates', json=update_data)
         response.raise_for_status()
         response_json = response.json()
