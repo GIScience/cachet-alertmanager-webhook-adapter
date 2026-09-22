@@ -122,6 +122,23 @@ def test_load_components_follows_pagination(mocked_api, responses):
     assert result_ids == {1: [1, 2]}
 
 
+def test_load_components_with_same_name_in_different_groups(mocked_api, responses):
+    add_group_listing_response(responses, as_group_response('1', 'general'), as_group_response('2', 'special'))
+    add_component_listing_response(
+        responses,
+        as_component_response('1', 'same_name_different_group', '1'),
+        as_component_response('2', 'same_name_different_group', '2'),
+    )
+    update_component(responses, component_id=1, name='same_name_different_group', group_id=1)
+    update_component(responses, component_id=2, name='same_name_different_group', group_id=2)
+
+    data = ComponentData(
+        {'general': [{'name': 'same_name_different_group'}], 'special': [{'name': 'same_name_different_group'}]}
+    )
+    result_ids = load_components(api=mocked_api, data=data)
+    assert result_ids == {1: [1], 2: [2]}
+
+
 def test_sync_components(mocked_api, responses):
     component_a_creation_responses(responses=responses)
 

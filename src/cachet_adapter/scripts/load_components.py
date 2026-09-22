@@ -1,8 +1,9 @@
 import argparse
 import json
 import logging
+from typing import Optional
 
-from cachet_adapter.models.cachet import CachetGroupAttributes
+from cachet_adapter.models.cachet import BaseComponent, CachetGroupAttributes
 from cachet_adapter.models.scripts import ComponentData
 from cachet_adapter.settings import AdapterSettings
 from cachet_adapter.utils.cachet_api import CachetApi
@@ -34,44 +35,22 @@ def parse_args() -> argparse.Namespace:
 def load_components(api: CachetApi, data: ComponentData, prune: bool = False) -> dict[int, list[int]]:
     result = dict()
 
-    available_groups = dict()
-    available_components = dict()
-    for group in api.list_groups():
-        available_groups[group.attributes.name] = group.id
-    for component in api.list_components().data:
-        available_components[component.attributes.name] = {
-            'id': component.id,
-            'group_id': component.relationships.group.data.id if component.relationships.group.data else None,
-        }
+    available_groups, available_components = get_lookup_dicts(api=api)
 
     for group_name, components in data.root.items():
-        group_exists = group_name in available_groups.keys()
-        if not group_exists:
-            group = CachetGroupAttributes(name=group_name)
-            group_id = api.create_group(group=group)
-        else:
-            group_id = available_groups.pop(group_name)
+        group_id = handle_group(api=api, available_groups=available_groups, group_name=group_name)
 
         group_component_id_list = list()
         for component in components:
-            component_exists = (
-                component.name in available_components.keys()
-                and available_components[component.name]['group_id'] == group_id
+            component_id = handle_component(
+                api=api, available_components=available_components, group_id=group_id, component=component
             )
-            if not component_exists:
-                component_id = api.create_component(component=component, group_id=group_id)
-            else:
-                component_id = available_components.pop(component.name)['id']
-                api.update_component(component=component, group_id=group_id, component_id=component_id)
             group_component_id_list.append(component_id)
 
         result[group_id] = group_component_id_list
 
     if prune:
-        for group_id in available_groups.values():
-            api.delete_group(group_id=group_id)
-        for component in available_components.values():
-            api.delete_component(component_id=component['id'])
+        prune_data(api=api, remaingin_groups=available_groups, remaining_components=available_components)
     elif len(available_groups) > 0 or len(available_components) > 0:
         log.warning(
             f'The groups {available_groups} ({{group-name:id}}) and the components {available_components} '
@@ -79,6 +58,53 @@ def load_components(api: CachetApi, data: ComponentData, prune: bool = False) ->
         )
 
     return result
+
+
+def group_qualified_component_name(group_id: Optional[int], component_name: str) -> str:
+    return f'{group_id}.{component_name}'
+
+
+def get_lookup_dicts(api: CachetApi) -> tuple[dict[str, int], dict[str, int]]:
+    available_groups = dict()
+    for group in api.list_groups():
+        available_groups[group.attributes.name] = group.id
+
+    available_components = dict()
+    for component in api.list_components().data:
+        component_name = component.attributes.name
+        group_id = component.relationships.group.data.id if component.relationships.group.data else None
+        component_key = group_qualified_component_name(group_id=group_id, component_name=component_name)
+        available_components[component_key] = component.id
+
+    return available_groups, available_components
+
+
+def handle_group(api: CachetApi, available_groups: dict[str, int], group_name: str) -> int:
+    if group_name in available_groups.keys():
+        group_id = available_groups.pop(group_name)
+    else:
+        group = CachetGroupAttributes(name=group_name)
+        group_id = api.create_group(group=group)
+    return group_id
+
+
+def handle_component(
+    api: CachetApi, available_components: dict[str, int], group_id: int, component: BaseComponent
+) -> int:
+    component_key = group_qualified_component_name(group_id=group_id, component_name=component.name)
+    if component_key in available_components.keys():
+        component_id = available_components.pop(component_key)
+        api.update_component(group_id=group_id, component_id=component_id, component=component)
+    else:
+        component_id = api.create_component(group_id=group_id, component=component)
+    return component_id
+
+
+def prune_data(api: CachetApi, remaingin_groups: dict[str, int], remaining_components: dict[str, int]) -> None:
+    for group_id in remaingin_groups.values():
+        api.delete_group(group_id=group_id)
+    for component_id in remaining_components.values():
+        api.delete_component(component_id=component_id)
 
 
 def main() -> None:

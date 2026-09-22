@@ -85,7 +85,7 @@ class CachetApi(HttpConnection):
         log.debug(f'Component {component_group}.{component_name} unknown.')
         return None
 
-    def create_component(self, component: BaseComponent, group_id: int) -> int:
+    def create_component(self, group_id: int, component: BaseComponent) -> int:
         component_data = component.model_dump(mode='json', exclude_none=True)
         component_data = component_data | {'component_group_id': group_id}
         log.debug(f'Creating component {component_data}')
@@ -96,7 +96,7 @@ class CachetApi(HttpConnection):
         component_id = response_component.data.id
         return component_id
 
-    def update_component(self, component: BaseComponent, group_id: int, component_id: int) -> None:
+    def update_component(self, group_id: int, component_id: int, component: BaseComponent) -> None:
         component_data = component.model_dump(mode='json', exclude_none=True)
         component_data = component_data | {'component_group_id': group_id}
         response = self.session.put(f'{self.base_url}/components/{component_id}', json=component_data)
