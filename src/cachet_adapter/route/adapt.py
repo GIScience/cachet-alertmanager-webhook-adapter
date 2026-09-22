@@ -59,6 +59,8 @@ async def adapt(
     else:
         alerts = alertmanager.alerts
 
+    log.info(f'Webhook received with {len(alerts)} alert(s)')
+
     incident_ids = []
     with Session(request.app.state.db_engine) as db_session:
         for alert in alerts:
@@ -77,6 +79,7 @@ async def adapt(
                 cachet_api.update_incident(incident_id=incident_id, new_status=IncidentStatus.FIXED)
                 delete_incident(db_session=db_session, incident_id=incident_id)
                 incident_ids.append(incident_id)
+                log.debug(f'Pruned incident {incident_id} because its alert is no longer firing')
 
     return AdaptResponse(incident_ids=incident_ids)
 
@@ -88,7 +91,12 @@ def process_alert(
     message_override: OverrideMode,
     secondary_component_incident_visible: bool = True,
 ) -> Optional[int]:
-    log.debug(f'Adapting {alert.model_dump_json(indent=4)}')
+    alert_component_group = alert.labels.cachet_group or alert.labels.org or NONE_GROUP_STR
+    alert_component_name = alert.labels.cachet_component or alert.labels.job
+    log.debug(
+        f'Adapting alert {alert.fingerprint}: {alert_component_group}.{alert_component_name} '
+        f'({alert.status}, severity={alert.labels.severity})'
+    )
 
     incident_id = get_incident_id(db_session=db_session, starts_at=alert.startsAt, fingerprint=alert.fingerprint)
     incident_status = extract_incident_status(status=alert.status)
@@ -98,8 +106,6 @@ def process_alert(
             db_session=db_session, cachet_api=cachet_api, incident_id=incident_id, incident_status=incident_status
         )
     else:
-        alert_component_group = alert.labels.cachet_group or alert.labels.org or NONE_GROUP_STR
-        alert_component_name = alert.labels.cachet_component or alert.labels.job
         alert_component_status = extract_alert_component_status(severity=alert.labels.severity)
 
         linked_components, top_level_component_incident = get_dependent_components(
@@ -124,7 +130,10 @@ def process_alert(
                 message_override=message_override,
             )
         else:
-            log.debug('Not creating incident because there are no linked components and no force-flag')
+            log.debug(
+                f'Not creating incident for alert {alert.fingerprint} '
+                f'because there are no linked components and no force-flag'
+            )
 
     return incident_id
 
@@ -162,6 +171,10 @@ def create_new_incident(
     incident_id = cachet_api.create_incident(incident=incident)
     save_incident_id(
         db_session=db_session, starts_at=alert.startsAt, fingerprint=alert.fingerprint, incident_id=incident_id
+    )
+    log.debug(
+        f'Created incident {incident_id} "{incident_name}" for alert {alert.fingerprint} '
+        f'with {len(linked_components)} component(s)'
     )
     return incident_id
 
@@ -207,11 +220,13 @@ def handle_known_incident(
     existing_status = existing_incident.data.attributes.status.value
     if existing_status < incident_status:
         cachet_api.update_incident(incident_id=incident_id, new_status=incident_status)
+        log.debug(f'Updated incident {incident_id}: {IncidentStatus(existing_status).name} -> {incident_status.name}')
     elif existing_status == IncidentStatus.FIXED and incident_status != IncidentStatus.FIXED:
         log.warning(f'The incident {incident_id} was marked as fixed in cachet but is still firing!')
 
     if incident_status == IncidentStatus.FIXED:
         delete_incident(db_session=db_session, incident_id=incident_id)
+        log.debug(f'Incident {incident_id} is fixed, removed it from the resolver database')
 
 
 def extract_incident_status(status: AlertmanagerWebhookStatus | AlertmanagerStatusObject) -> IncidentStatus:

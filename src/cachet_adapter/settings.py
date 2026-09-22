@@ -1,7 +1,7 @@
 from enum import StrEnum
 from pathlib import Path
 
-from pydantic import HttpUrl
+from pydantic import DirectoryPath, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +13,7 @@ class OverrideMode(StrEnum):
 
 class AdapterSettings(BaseSettings):
     log_level: str = 'INFO'
+    config_dir: DirectoryPath = Path('conf')
 
     port: int = 8002
     root_path: str = '/'

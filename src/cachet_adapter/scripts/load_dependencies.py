@@ -1,6 +1,5 @@
 import argparse
 import csv
-import json
 import logging
 
 import requests
@@ -43,7 +42,7 @@ def load_dependencies(
     prune: bool = False,
 ) -> None:
     log.info(f'Uploading {len(data)} dependencies')
-    log.debug(f'Uploading {json.dumps(data, indent=4)}')
+    log.debug(f'Uploading {data}')
     response = requests.post(f'{adapter_url}/{COMPONENT_MAPPING_PATH}', json=data, params={'prune': prune})
     response.raise_for_status()
 

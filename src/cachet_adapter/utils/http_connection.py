@@ -1,9 +1,12 @@
+import logging
 from typing import Optional
 
 import requests
 from requests.auth import HTTPBasicAuth
 from requests.sessions import HTTPAdapter
 from urllib3 import Retry
+
+log = logging.getLogger(__name__)
 
 
 class HttpConnection:
@@ -38,6 +41,13 @@ class HttpConnection:
         # noinspection HttpUrlsUsage
         self.session.mount('http://', HTTPAdapter(max_retries=retries))
         self.session.mount('https://', HTTPAdapter(max_retries=retries))
+
+        self.session.hooks['response'].append(self._log_error_response)
+
+    @staticmethod
+    def _log_error_response(response: requests.Response, **_kwargs):
+        if not response.ok:
+            log.error(f'{response.request.method} {response.url} returned {response.status_code}: {response.text}')
 
     def set_auth(self, token: Optional[str], username: Optional[str], password: Optional[str]):
         if token is not None:

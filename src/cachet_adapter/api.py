@@ -2,6 +2,7 @@ import logging
 from contextlib import asynccontextmanager
 
 import uvicorn
+import yaml
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from sqlmodel import SQLModel, create_engine
@@ -58,13 +59,21 @@ def main():
     # Reading settings from .env file
     # noinspection argument-list
     settings = AdapterSettings()
+
+    # Logging
     logging.basicConfig(level=settings.log_level.upper())
+    log_config = f'{settings.config_dir}/logging.yaml'
+    with open(log_config) as file:
+        logging.config.dictConfig(yaml.safe_load(file))
+
     uvicorn.run(
         app,
         host='0.0.0.0',
         port=settings.port,
         root_path=settings.root_path,
         log_level=settings.log_level.lower(),
+        # Skip uvicorn's own logging config so its loggers propagate to the root handler and share one format
+        log_config=None,
     )
 
 

@@ -31,6 +31,8 @@ async def schedule(
 ) -> ScheduleResponse:
     cachet_api = request.app.state.cachet_api
 
+    log.info(f'Calendar sync received with {len(scheduled_incidents)} event(s)')
+
     schedule_ids = []
     with Session(request.app.state.db_engine) as db_session:
         for scheduled_incident in scheduled_incidents:
@@ -48,7 +50,13 @@ async def schedule(
 def process_schedule(
     db_session: Session, cachet_api: CachetApi, scheduled_incident: ScheduledIncident
 ) -> Optional[int]:
-    log.debug(f'Processing {scheduled_incident.model_dump_json(indent=4)}')
+    components = scheduled_incident.components
+    components_summary = ', '.join(components) if isinstance(components, dict) else components
+    log.debug(
+        f'Processing event {scheduled_incident.id}: "{scheduled_incident.name}" '
+        f'({scheduled_incident.scheduled_at:%Y-%m-%d %H:%M} -> '
+        f'{scheduled_incident.completed_at:%Y-%m-%d %H:%M} UTC, components={components_summary})'
+    )
 
     schedule_id = get_schedule_id(db_session=db_session, schedule_id=scheduled_incident.id)
 

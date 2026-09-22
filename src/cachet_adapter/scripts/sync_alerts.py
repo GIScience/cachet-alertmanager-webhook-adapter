@@ -1,5 +1,4 @@
 import argparse
-import json
 import logging
 
 import requests
@@ -47,7 +46,7 @@ def sync_alerts(
     alerts = alertmanager_api.get_alerts()
 
     log.info(f'Synching {len(alerts)} alerts')
-    log.debug(f'Synching {json.dumps(alerts, indent=4)}')
+    log.debug(f'Synching {alerts}')
     response = requests.post(f'{adapter_url}/adapt', json=alerts, params={'prune': prune})
     response.raise_for_status()
 

@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Optional
 
@@ -33,7 +32,7 @@ class CachetApi(HttpConnection):
 
     def create_group(self, group: CachetGroupAttributes) -> int:
         group_data = group.model_dump(mode='json')
-        log.debug(f'Creating group {json.dumps(group_data, indent=4)}')
+        log.debug(f'Creating group {group_data}')
         response = self.session.post(f'{self.base_url}/component-groups', json=group_data)
         response.raise_for_status()
         response_json = response.json()
@@ -68,7 +67,7 @@ class CachetApi(HttpConnection):
                 cachet_group_name = NONE_GROUP_STR
 
             if component_group == cachet_group_name and component_name == component.attributes.name:
-                log.debug(f'Component ID is {component.id}')
+                log.debug(f'Component {component_group}.{component_name} has ID {component.id}')
                 return component.id
 
         log.debug(f'Component {component_group}.{component_name} unknown.')
@@ -77,7 +76,7 @@ class CachetApi(HttpConnection):
     def create_component(self, component: BaseComponent, group_id: int) -> int:
         component_data = component.model_dump(mode='json', exclude_none=True)
         component_data = component_data | {'component_group_id': group_id}
-        log.debug(f'Creating component {json.dumps(component_data, indent=4)}')
+        log.debug(f'Creating component {component_data}')
         response = self.session.post(f'{self.base_url}/components', json=component_data)
         response.raise_for_status()
         response_json = response.json()
@@ -103,7 +102,7 @@ class CachetApi(HttpConnection):
 
     def create_incident(self, incident: Incident) -> int:
         incident_data = incident.model_dump(exclude_none=True, mode='json')
-        log.debug(f'Creating incident {json.dumps(incident_data, indent=4)}')
+        log.debug(f'Creating incident {incident_data}')
         response = self.session.post(f'{self.base_url}/incidents', json=incident_data)
         response.raise_for_status()
         response_json = response.json()
@@ -125,7 +124,7 @@ class CachetApi(HttpConnection):
 
     def create_schedule(self, scheduled_incident: CachetSchedule) -> int:
         schedule_data = scheduled_incident.model_dump(mode='json', exclude_none=True)
-        log.debug(f'Creating schedule {json.dumps(schedule_data, indent=4)}')
+        log.debug(f'Creating schedule {schedule_data}')
         response = self.session.post(f'{self.base_url}/schedules', json=schedule_data)
         response.raise_for_status()
         response_json = response.json()
