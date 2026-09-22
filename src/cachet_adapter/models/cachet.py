@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, HttpUrl, PlainSerializer, StringConstrain
 
 from cachet_adapter.models import UtcDateTime
 
-type CachetStr = Annotated[str, StringConstraints(min_length=1)]
+type CachetStr = Annotated[str, StringConstraints(min_length=1, max_length=255)]
 type CachetDateTime = Annotated[
     UtcDateTime,
     PlainSerializer(lambda _datetime: _datetime.strftime('%Y-%m-%d %H:%M:%S'), return_type=str),
@@ -41,7 +41,7 @@ class CachetIdObject(BaseModel):
 
 
 class BaseComponent(BaseModel):
-    name: str  # Required by the Cachet API
+    name: CachetStr  # Required by the Cachet API
     description: Optional[str] = None
     link: Optional[HttpUrl] = None
     status: ComponentStatus = ComponentStatus.OPERATIONAL
@@ -57,8 +57,8 @@ class IncidentComponent(BaseModel, frozen=True):
 
 
 class Incident(BaseModel):
-    name: Annotated[str, Field(max_length=255)]  # Required by the Cachet API
-    status: Optional[IncidentStatus] = None  # Required by the Cachet API
+    name: CachetStr  # Required by the Cachet API
+    status: IncidentStatus = IncidentStatus.REPORTED  # Required by the Cachet API
     message: CachetStr  # Required by the Cachet API
     visible: bool = False
     occurred_at: Optional[CachetDateTime] = None
@@ -112,7 +112,7 @@ class CachetComponentResponseData(BaseModel):
 
 
 class CachetGroupAttributes(BaseModel):
-    name: str  # Required by the Cachet API
+    name: CachetStr  # Required by the Cachet API
     visible: bool = True
     collapsed: int = CollapseStates.COLLAPSED_UNLESS_INCIDENT
 

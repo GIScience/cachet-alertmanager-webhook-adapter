@@ -40,8 +40,8 @@ router = APIRouter(prefix=ADAPT_ROUTE)
 TOP_LEVEL_INCIDENT_NAME = '{component} is experiencing issues'
 TOP_LEVEL_INCIDENT_MESSAGE = 'The service may be degraded or unavailable until the issue is resolved.'
 
-DOWNSTREAM_INCIDENT_NAME = 'A dependency is experiencing issues'
-DOWNSTREAM_INCIDENT_MESSAGE = 'This service may be degraded or unavailable until the upstream issue is resolved.'
+SUPPLIER_INCIDENT_NAME = 'A dependency is experiencing issues'
+SUPPLIER_INCIDENT_MESSAGE = 'This service may be degraded or unavailable until the upstream issue is resolved.'
 
 
 @router.post(
@@ -115,6 +115,7 @@ def process_alert(
                 db_session=db_session,
                 cachet_api=cachet_api,
                 alert=alert,
+                alert_component_group=alert_component_group,
                 alert_component_name=alert_component_name,
                 incident_status=incident_status,
                 linked_components=linked_components,
@@ -132,6 +133,7 @@ def create_new_incident(
     db_session: Session,
     cachet_api: CachetApi,
     alert: WebhookAlert | ApiAlert,
+    alert_component_group: str,
     alert_component_name: str,
     incident_status: IncidentStatus,
     linked_components: set[IncidentComponent],
@@ -141,6 +143,7 @@ def create_new_incident(
 ) -> int:
     incident_name, incident_description = extract_name_and_description(
         alert=alert,
+        alert_component_group=alert_component_group,
         alert_component_name=alert_component_name,
         top_level_component_incident=top_level_component_incident,
         message_override=message_override,
@@ -165,16 +168,20 @@ def create_new_incident(
 
 def extract_name_and_description(
     alert: WebhookAlert | ApiAlert,
+    alert_component_group: str,
     alert_component_name: str,
     message_override: OverrideMode,
     top_level_component_incident: bool,
 ) -> tuple[str, str]:
     if top_level_component_incident:
-        incident_name = TOP_LEVEL_INCIDENT_NAME.format(component=alert_component_name)
+        fully_qualified_component_name = (
+            f'{alert_component_group}{": " if alert_component_group else ""}{alert_component_name}'
+        )
+        incident_name = TOP_LEVEL_INCIDENT_NAME.format(component=fully_qualified_component_name)
         incident_description = TOP_LEVEL_INCIDENT_MESSAGE
     else:
-        incident_name = DOWNSTREAM_INCIDENT_NAME
-        incident_description = DOWNSTREAM_INCIDENT_MESSAGE
+        incident_name = SUPPLIER_INCIDENT_NAME
+        incident_description = SUPPLIER_INCIDENT_MESSAGE
 
     match message_override:
         case OverrideMode.ALL:

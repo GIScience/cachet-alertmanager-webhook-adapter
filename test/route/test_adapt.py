@@ -425,6 +425,57 @@ def test_adapt_override(
     assert response.json() == {'incident_ids': [30, 31]}
 
 
+def test_adapt_features_group_in_incident_name(responses, mocked_client):
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '1'}}}}],
+            'included': [{'id': '1', 'attributes': {'name': 'general'}}],
+        },
+    )
+
+    cachet_request = {
+        'name': 'general: a is experiencing issues',
+        'status': 0,
+        'message': 'The service may be degraded or unavailable until the issue is resolved.',
+        'visible': True,
+        'occurred_at': '2025-11-20 15:54:41',
+        'components': [{'id': 1, 'status': 4}],
+    }
+    cachet_header = {
+        'Authorization': 'Bearer my-token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+    cachet_response = {'data': {'id': '30', 'attributes': {'status': {'value': 0}}}}
+    responses.post(
+        'http://test-cachet/api/incidents',
+        match=[
+            matchers.json_params_matcher(cachet_request, strict_match=False),
+            matchers.header_matcher(cachet_header),
+        ],
+        json=cachet_response,
+    )
+
+    alertmanager_request = {
+        'alerts': [
+            {
+                'status': 'firing',
+                'labels': {'job': 'a', 'cachet_group': 'general'},
+                'annotations': {},
+                'startsAt': '2025-11-20T15:54:41.898000Z',
+                'fingerprint': 'fingerprint',
+            }
+        ]
+    }
+
+    response = mocked_client.post('/adapt', json=alertmanager_request)
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': [30]}
+
+
 def test_adapt_links_incidents_to_dependent_components(mocked_client, responses, load_component_chain):
     responses.get(
         'http://test-cachet/api/components',
@@ -727,7 +778,7 @@ def test_adapt_links_incidents_to_dependent_components_self_no_component_in_grou
         'http://test-cachet/api/components',
         match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
         json={
-            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': {'id': '2'}}}}],
+            'data': [{'id': '1', 'attributes': {'name': 'b'}, 'relationships': {'group': {'data': {'id': '2'}}}}],
             'included': [{'id': '2', 'attributes': {'name': 'special'}}],
         },
     )
