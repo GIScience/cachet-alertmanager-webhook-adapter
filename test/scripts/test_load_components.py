@@ -30,14 +30,16 @@ def add_component_listing_response(
     responses: RequestsMock,
     *components: dict,
     query_params: Optional[dict] = None,
-    links: Optional[dict] = None,
+    additional_response_content: Optional[dict] = None,
 ) -> None:
     cachet_response = {'data': list(components)}
-    if links:
-        cachet_response['links'] = links
+    if additional_response_content:
+        cachet_response = cachet_response | additional_response_content
+
+    query_params = {'include': 'group'} | (query_params or dict())
     responses.get(
         f'{CACHET_URL}/components',
-        match=[matchers.query_param_matcher(query_params or {'include': 'group'})],
+        match=[matchers.query_param_matcher(query_params)],
         json=cachet_response,
     )
 
@@ -98,6 +100,26 @@ def test_update_components_that_exist(mocked_api, responses):
 
     assert group_create_request.call_count == 1
     assert component_create_request.call_count == 1
+
+
+def test_load_components_follows_pagination(mocked_api, responses):
+    add_group_listing_response(responses, as_group_response('1', 'general'))
+    add_component_listing_response(
+        responses,
+        as_component_response('1', 'a', '1'),
+        additional_response_content={'links': {'next': f'{CACHET_URL}/components?page=2'}},
+    )
+    add_component_listing_response(
+        responses,
+        as_component_response('2', 'b', '1'),
+        query_params={'page': '2'},
+    )
+    update_component(responses, component_id=1, name='a', group_id=1)
+    update_component(responses, component_id=2, name='b', group_id=1)
+
+    data = ComponentData({'general': [{'name': 'a'}, {'name': 'b'}]})
+    result_ids = load_components(api=mocked_api, data=data)
+    assert result_ids == {1: [1, 2]}
 
 
 def test_sync_components(mocked_api, responses):

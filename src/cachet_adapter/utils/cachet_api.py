@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Iterator
 from typing import Optional
 
 from cachet_adapter.models.cachet import (
@@ -24,12 +25,21 @@ log = logging.getLogger(__name__)
 
 
 class CachetApi(HttpConnection):
+    def _get_paginated(self, url: str, params: Optional[dict] = None) -> Iterator[dict]:
+        # Cachet drops the query parameters from the next-page link, so re-send them on every page
+        while url:
+            response = self.session.get(url, params=params)
+            response.raise_for_status()
+            page = response.json()
+            yield page
+            url = page.get('links', {}).get('next')
+
     def list_groups(self) -> list[CachetGroup]:
-        response = self.session.get(f'{self.base_url}/component-groups')
-        response.raise_for_status()
-        response_json = response.json()
-        cachet_response = CachetGroupQueryResponse.model_validate(response_json)
-        return cachet_response.data
+        groups = []
+        for page in self._get_paginated(f'{self.base_url}/component-groups'):
+            cachet_group_list = CachetGroupQueryResponse.model_validate(page).data
+            groups.extend(cachet_group_list)
+        return groups
 
     def create_group(self, group: CachetGroupAttributes) -> int:
         group_data = group.model_dump(mode='json')
@@ -48,11 +58,12 @@ class CachetApi(HttpConnection):
         querystring = {'include': 'group'}
         if component_name:
             querystring = querystring | {'filter[name]': component_name}
-        response = self.session.get(f'{self.base_url}/components', params=querystring)
-        response.raise_for_status()
-        response_json = response.json()
-        cachet_response = CachetComponentQueryResponse.model_validate(response_json)
-        return cachet_response
+        result = CachetComponentQueryResponse(data=[])
+        for page in self._get_paginated(f'{self.base_url}/components', params=querystring):
+            cachet_response = CachetComponentQueryResponse.model_validate(page)
+            result.data.extend(cachet_response.data)
+            result.included.extend(cachet_response.included)
+        return result
 
     def get_component_id(self, component_group: str, component_name: str) -> Optional[int]:
         cachet_response = self.list_components(component_name=component_name)
