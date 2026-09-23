@@ -22,6 +22,16 @@ class ComponentStatus(IntEnum):
     UNDER_MAINTENANCE = 6
 
 
+COMPONENT_STATUS_SEVERITY = {
+    ComponentStatus.OPERATIONAL: 0,
+    ComponentStatus.UNKNOWN: 1,
+    ComponentStatus.UNDER_MAINTENANCE: 3,
+    ComponentStatus.PERFORMANCE_ISSUES: 4,
+    ComponentStatus.PARTIAL_OUTAGE: 5,
+    ComponentStatus.MAJOR_OUTAGE: 6,
+}
+
+
 class IncidentStatus(IntEnum):
     REPORTED = 0
     INVESTIGATING = 1
@@ -61,7 +71,7 @@ class IncidentComponent(BaseModel, frozen=True):
             return None
 
         # by iterating in order and by highest-status-first we can only keep the first occurrence of duplicates
-        value.sort(key=lambda incident: (incident.id, incident.status), reverse=True)
+        value.sort(key=lambda incident: (incident.id, COMPONENT_STATUS_SEVERITY[incident.status]), reverse=True)
         seen = set()
         deduped = []
         for component in value:

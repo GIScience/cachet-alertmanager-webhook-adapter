@@ -117,7 +117,7 @@ def process_linked_components(
     components: Optional[dict[str, list[str]]] | Literal['all'],
     status: ComponentStatus = ComponentStatus.MAJOR_OUTAGE,
 ) -> Optional[list[IncidentComponent]]:
-    linked_components = set()
+    linked_components = list()
 
     if components is None:
         return None
@@ -125,7 +125,7 @@ def process_linked_components(
         all_components = cachet_api.list_components().data
         for component in all_components:
             incident_component = IncidentComponent(id=component.id, status=status)
-            linked_components.add(incident_component)
+            linked_components.append(incident_component)
     else:
         for group, components in components.items():
             for component in components:
@@ -136,5 +136,5 @@ def process_linked_components(
                     cachet_api=cachet_api,
                     db_session=db_session,
                 )
-                linked_components.update(sub_linked_components)
-    return list(linked_components)
+                linked_components.extend(sub_linked_components)
+    return linked_components

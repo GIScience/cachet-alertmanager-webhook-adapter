@@ -211,6 +211,71 @@ def test_create_schedule_with_potentially_duplicate_dependency(mocked_client, re
     assert response.json() == {'schedule_ids': [1]}
 
 
+def test_transitive_dependent_components_set_to_unknown(mocked_client, responses, load_component_chain):
+    """If a service is maintained, its transitive dependencies are in an unknown state (independent if the dependency is
+    required or optional). Unknown is the best guess we have.
+    """
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'a', 'include': 'group'})],
+        json={
+            'data': [{'id': '1', 'attributes': {'name': 'a'}, 'relationships': {'group': {'data': None}}}],
+        },
+    )
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'b', 'include': 'group'})],
+        json={
+            'data': [],
+        },
+    )
+    responses.get(
+        'http://test-cachet/api/components',
+        match=[matchers.query_param_matcher({'filter[name]': 'c', 'include': 'group'})],
+        json={
+            'data': [],
+        },
+    )
+
+    responses.get(
+        'http://test-cachet/api/schedules',
+        json={'data': []},
+    )
+
+    responses.post(
+        'http://test-cachet/api/schedules',
+        match=[
+            matchers.json_params_matcher(
+                {
+                    'name': 'Schedule one',
+                    'message': 'Updates',
+                    'scheduled_at': '2025-11-07 05:31:56',
+                    'completed_at': '3026-11-07 06:31:56',
+                    'components': [{'id': 1, 'status': 5}],
+                }
+            )
+        ],
+        json={
+            'data': {'id': '1'},
+        },
+    )
+
+    schedule_request = [
+        {
+            'id': 'event-1',
+            'name': 'Schedule one',
+            'message': 'Updates',
+            'scheduled_at': '2025-11-07T05:31:56Z',
+            'completed_at': '3026-11-07T06:31:56Z',
+            'components': {'': ['c']},
+        }
+    ]
+    response = mocked_client.post('/schedule', json=schedule_request)
+
+    assert response.status_code == 200
+    assert response.json() == {'schedule_ids': [1]}
+
+
 def test_update_known_schedule(mocked_client, responses):
     create_default_schedule(responses, mocked_client)
 

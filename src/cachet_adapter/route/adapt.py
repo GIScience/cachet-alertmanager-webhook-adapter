@@ -153,7 +153,7 @@ def create_new_incident(
     alert_component_group: str,
     alert_component_name: str,
     incident_status: IncidentStatus,
-    linked_components: set[IncidentComponent],
+    linked_components: list[IncidentComponent],
     top_level_component_incident: bool,
     secondary_component_incident_visible: bool,
     message_override: OverrideMode,
@@ -173,7 +173,7 @@ def create_new_incident(
         message=incident_description,
         occurred_at=alert.startsAt,
         visible=visible,
-        components=list(linked_components),
+        components=linked_components,
     )
 
     incident_id = cachet_api.create_incident(incident=incident)

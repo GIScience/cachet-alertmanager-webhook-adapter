@@ -136,6 +136,10 @@ def subset_graph(
 def unique_dependent_components(
     db_session: Session, group: str, component: str
 ) -> dict[str, dict[str, ComponentRelationship]]:
+    """
+    Get all directly and transitive dependent components.
+    Convert transitive dependencies to direct dependencies respecting dependency strength/type (see `subset_graph`)
+    """
     dependent_components = subset_graph(
         group=group,
         component=component,
@@ -208,14 +212,20 @@ def get_additional_known_incidents(db_session: Session, incident_ids: Sequence[i
 
 def get_dependent_components(
     group: str, name: str, status: ComponentStatus, cachet_api: CachetApi, db_session: Session
-) -> tuple[set[IncidentComponent], bool]:
+) -> tuple[list[IncidentComponent], bool]:
+    """
+    Get all objects (the raising object + all dependencies) that are components in cachet.
+    Assign statuses depending on the (resolved) relation to the raising object.
+    """
     alert_component_id = cachet_api.get_component_id(component_group=group, component_name=name)
 
     direct_incident = alert_component_id is not None
 
-    linked_components = set()
+    linked_components = list()
     if direct_incident:
-        linked_components.add(IncidentComponent(id=alert_component_id, status=status))
+        # We know alert_component_id is an int because of the check above
+        # noinspection bad-argument-type
+        linked_components.append(IncidentComponent(id=alert_component_id, status=status))
 
     dependent_components = unique_dependent_components(group=group, component=name, db_session=db_session)
 
@@ -230,14 +240,16 @@ def get_dependent_components(
                     dependent_component_relationship=dependent_component_relationship,
                 )
                 component = IncidentComponent(id=dependent_component_id, status=dependent_component_status)
-                linked_components.add(component)
+                linked_components.append(component)
     return linked_components, direct_incident
 
 
 def extract_dependent_component_status(
     alert_component_status: ComponentStatus, dependent_component_relationship: ComponentRelationship
 ) -> ComponentStatus:
-    if (
+    if alert_component_status == ComponentStatus.UNDER_MAINTENANCE:
+        return ComponentStatus.UNKNOWN
+    elif (
         alert_component_status == ComponentStatus.MAJOR_OUTAGE
         and dependent_component_relationship == ComponentRelationship.REQUIRES
     ):
