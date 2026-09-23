@@ -627,8 +627,8 @@ def test_adapt_dependent_component_respect_relationship(mocked_client, responses
         'visible': True,
         'occurred_at': '2025-11-20 15:54:41',
         'components': [
-            {'id': 2, 'status': 3},
             {'id': 3, 'status': 4},
+            {'id': 2, 'status': 3},
             {'id': 1, 'status': 4},
         ],
     }
@@ -1226,9 +1226,9 @@ def test_adapt_marks_dependents_optionally_relying_on_supplier_as_partial_outage
                     'visible': True,
                     'occurred_at': '2025-11-20 15:54:41',
                     'components': [
+                        {'id': 3, 'status': 4},
                         {'id': 2, 'status': 3},
                         {'id': 1, 'status': 3},
-                        {'id': 3, 'status': 4},
                     ],
                 }
             ),

@@ -1,7 +1,7 @@
 from enum import IntEnum
 from typing import Annotated, Optional
 
-from pydantic import BaseModel, Field, HttpUrl, PlainSerializer, StringConstraints
+from pydantic import AfterValidator, BaseModel, Field, HttpUrl, PlainSerializer, StringConstraints
 
 from cachet_adapter.models import UtcDateTime
 
@@ -55,6 +55,24 @@ class IncidentComponent(BaseModel, frozen=True):
     id: CachetId
     status: ComponentStatus
 
+    @staticmethod
+    def deduplicate_list(value: Optional[list['IncidentComponent']]) -> Optional[list['IncidentComponent']]:
+        if value is None:
+            return None
+
+        # by iterating in order and by highest-status-first we can only keep the first occurrence of duplicates
+        value.sort(key=lambda incident: (incident.id, incident.status), reverse=True)
+        seen = set()
+        deduped = []
+        for component in value:
+            if component.id not in seen:
+                deduped.append(component)
+                seen.add(component.id)
+        return deduped
+
+
+type LinkedComponents = Annotated[Optional[list[IncidentComponent]], AfterValidator(IncidentComponent.deduplicate_list)]
+
 
 class Incident(BaseModel):
     name: CachetStr  # Required by the Cachet API
@@ -62,7 +80,7 @@ class Incident(BaseModel):
     message: CachetStr  # Required by the Cachet API
     visible: bool = False
     occurred_at: Optional[CachetDateTime] = None
-    components: Optional[list[IncidentComponent]] = None
+    components: LinkedComponents = None
 
 
 class IncidentUpdate(BaseModel):
@@ -154,4 +172,4 @@ class CachetSchedule(BaseModel):
     message: CachetStr  # Required by the Cachet API
     scheduled_at: CachetDateTime  # Required by the Cachet API
     completed_at: CachetDateTime
-    components: Optional[list[IncidentComponent]]
+    components: LinkedComponents = None
