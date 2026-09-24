@@ -25,10 +25,10 @@ class ComponentStatus(IntEnum):
 COMPONENT_STATUS_SEVERITY = {
     ComponentStatus.OPERATIONAL: 0,
     ComponentStatus.UNKNOWN: 1,
-    ComponentStatus.UNDER_MAINTENANCE: 3,
-    ComponentStatus.PERFORMANCE_ISSUES: 4,
-    ComponentStatus.PARTIAL_OUTAGE: 5,
-    ComponentStatus.MAJOR_OUTAGE: 6,
+    ComponentStatus.UNDER_MAINTENANCE: 2,
+    ComponentStatus.PERFORMANCE_ISSUES: 3,
+    ComponentStatus.PARTIAL_OUTAGE: 4,
+    ComponentStatus.MAJOR_OUTAGE: 5,
 }
 
 
