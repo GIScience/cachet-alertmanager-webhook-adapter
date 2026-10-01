@@ -12,7 +12,7 @@ dependencies = [
     "pydantic>=2.12.4",
     "pydantic-settings>=2.12.0",
     "recurring-ical-events>=3.8.2",
-    "requests[socks]>=2.32.5",
+    "requests>=2.32.5",
     "sqlalchemy>=2.0.45",
     "sqlmodel>=0.0.27",
     "starlette>=0.50.0",
@@ -67,5 +67,5 @@ select = [
 omit = ["test/*"]
 
 [build-system]
-requires = ["uv_build>=0.11.18,<0.12.0"]
+requires = ["uv_build>=0.12.0,<0.13.0"]
 build-backend = "uv_build"

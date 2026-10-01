@@ -12,3 +12,5 @@ __pycache__/
 
 .coverage
 coverage.xml
+
+playground.py

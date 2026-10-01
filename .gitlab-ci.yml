@@ -1,6 +1,6 @@
 variables:
   UV_VERSION: "0.9"
-  PYTHON_VERSION: "3.13"
+  PYTHON_VERSION: "3.14"
   BASE_LAYER: bookworm
   UV_LINK_MODE: copy
 
@@ -64,7 +64,7 @@ optional_linting:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   image:
-    name: python:3.13
+    name: python:3.14
   variables:
     PRE_COMMIT_HOME: "$CI_PROJECT_DIR/.cache/pre-commit"
   cache:
