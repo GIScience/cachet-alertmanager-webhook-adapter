@@ -39,7 +39,7 @@ See [pyproject.toml](pyproject.toml) for configuration.
 ## Setting up Cachet Locally
 
 There's no dockerized Cachet available currently.
-Follow the [Cachet Development Environment](https://docs.cachethq.io/v3.x/development) guide.
+Follow the [Cachet Development Environment](https://cachethq.io/docs/v3.x/development) guide.
 [Laravel Herd](https://herd.laravel.com/) is optional.
 
 Note: The Cachet dev environment uses an in-memory SQLite database, so all data is lost when you stop the server.
