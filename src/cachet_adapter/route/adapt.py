@@ -109,10 +109,12 @@ def process_alert(
     incident_id = get_incident_id(db_session=db_session, starts_at=alert.startsAt, fingerprint=alert.fingerprint)
     incident_status = extract_incident_status(status=alert.status)
 
-    if incident_id:
+    if incident_id is not None:
         handle_known_incident(
             db_session=db_session, cachet_api=cachet_api, incident_id=incident_id, incident_status=incident_status
         )
+    elif incident_status == IncidentStatus.FIXED:
+        log.debug(f'Not creating incident for alert {alert.fingerprint} because it is already resolved')
     else:
         alert_component_status = extract_alert_component_status(severity=alert.labels.severity)
 

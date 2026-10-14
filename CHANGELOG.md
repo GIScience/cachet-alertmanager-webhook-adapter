@@ -5,9 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project mostly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://gitlab.heigit.org/heigit/utils/cachet-adapter/-/compare/1.0.0...main)
+## [Unreleased](https://gitlab.heigit.org/heigit/utils/cachet-adapter/-/compare/1.0.1...main)
 
-## [1.0.0](https://gitlab.heigit.org/heigit/utils/cachet-adapter/-/releases/1.0.0) - 2026-01-10
+## [1.0.1](https://gitlab.heigit.org/heigit/utils/cachet-adapter/-/releases/1.0.1) - 2026-10-14
+
+### Fixed
+
+- Already resolved alerts that are yet unknown to cachet will not be created
+  ([#44](https://gitlab.heigit.org/utils/cachet-adapter/-/work_items/40))
+
+## [1.0.0](https://gitlab.heigit.org/heigit/utils/cachet-adapter/-/releases/1.0.0) - 2026-10-01
 
 ### Added
 

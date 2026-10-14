@@ -891,6 +891,27 @@ def test_adapt_no_dependent_component(mocked_client, responses):
     assert response.json() == {'incident_ids': []}
 
 
+def test_adapt_ignores_fixed_new_incident(mocked_client, responses):
+    alertmanager_request = {
+        'alerts': [
+            {
+                'status': 'resolved',
+                'labels': {'job': 'a'},
+                'annotations': {
+                    'description': 'Component a is down.',
+                    'title': 'Component a down',
+                },
+                'startsAt': '2025-11-20T15:54:41.898000Z',
+                'fingerprint': 'fingerprint',
+            }
+        ]
+    }
+    response = mocked_client.post('/adapt', json=alertmanager_request)
+
+    assert response.status_code == 200
+    assert response.json() == {'incident_ids': []}
+
+
 def test_adapt_respects_severity(mocked_client, responses):
     responses.get(
         'http://test-cachet/api/components',
