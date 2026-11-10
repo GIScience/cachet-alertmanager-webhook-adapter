@@ -26,7 +26,7 @@ from cachet_adapter.models.database import NONE_GROUP_STR
 from cachet_adapter.settings import OverrideMode
 from cachet_adapter.utils.cachet_api import CachetApi
 from cachet_adapter.utils.storage import (
-    delete_incident,
+    delete_incident_id,
     get_additional_known_incidents,
     get_dependent_components,
     get_incident_id,
@@ -85,7 +85,7 @@ async def adapt(
                 create_incident_update(
                     cachet_api=cachet_api, incident_id=incident_id, incident_status=IncidentStatus.FIXED
                 )
-                delete_incident(db_session=db_session, incident_id=incident_id)
+                delete_incident_id(db_session=db_session, incident_id=incident_id)
                 incident_ids.append(incident_id)
                 log.debug(f'Pruned incident {incident_id} because its alert is no longer firing')
 
@@ -235,7 +235,7 @@ def handle_known_incident(
         log.warning(f'The incident {incident_id} was marked as fixed in cachet but is still firing!')
 
     if incident_status == IncidentStatus.FIXED:
-        delete_incident(db_session=db_session, incident_id=incident_id)
+        delete_incident_id(db_session=db_session, incident_id=incident_id)
         log.debug(f'Incident {incident_id} is fixed, removed it from the resolver database')
 
 

@@ -192,7 +192,7 @@ def get_schedule_id(db_session: Session, schedule_id: str) -> Optional[int]:
     return schedule_id
 
 
-def delete_incident(db_session: Session, incident_id: int) -> None:
+def delete_incident_id(db_session: Session, incident_id: int) -> None:
     stmt = delete(IncidentResolver).where(IncidentResolver.cachet_id == incident_id)
     db_session.exec(statement=stmt)
     db_session.commit()
